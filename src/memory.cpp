@@ -89,6 +89,7 @@ namespace harava
 	std::vector<result> memory::search(const type_bundle value)
 	{
 		std::vector<result> results;
+		results.reserve(100'000);
 
 		for (memory_region& region : regions)
 		{
@@ -117,7 +118,7 @@ namespace harava
 					r.location = i;
 					r.region_id = region.id;
 					r.type = type;
-					results.push_back(r);
+					results.emplace_back(r);
 					++region_result_count;
 				};
 
