@@ -102,7 +102,7 @@ namespace harava
 			{
 				const auto handle_result = [&](auto a, auto b, datatype type)
 				{
-					if (a != b)
+					if (a != b) [[likely]]
 						return;
 
 					result r;
@@ -144,7 +144,7 @@ namespace harava
 		std::vector<result> new_results;
 
 		std::fstream mem(mem_path, std::ios::in | std::ios::binary);
-		if (!mem.is_open())
+		if (!mem.is_open()) [[unlikely]]
 			throw "can't open " + mem_path;
 
 		std::unordered_map<u64, memory_region*> region_cache;
@@ -166,7 +166,7 @@ namespace harava
 				v.type = value;
 				memcpy(result.value, v.bytes, max_type_size);
 
-				if (new_value == value)
+				if (new_value == value) [[unlikely]]
 					new_results.push_back(result);
 			};
 
@@ -198,7 +198,7 @@ namespace harava
 		// result.value = new_value;
 
 		std::fstream mem(mem_path, std::ios::out | std::ios::binary);
-		if (!mem.is_open())
+		if (!mem.is_open()) [[unlikely]]
 			throw "can't open " + mem_path;
 
 		mem.seekg(result.location + get_region(result.region_id).start, std::ios::beg);
@@ -262,7 +262,7 @@ namespace harava
 		bytes.resize(end - start);
 
 		std::ifstream file(path, std::ios::binary);
-		if (!file.is_open())
+		if (!file.is_open()) [[unlikely]]
 		{
 			std::cerr << "can't open " << mem_path << '\n';
 			return {};
