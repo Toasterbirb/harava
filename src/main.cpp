@@ -1,9 +1,8 @@
 #include "Memory.hpp"
+#include "ScopeTimer.hpp"
 #include "Types.hpp"
 
-#include <chrono>
 #include <clipp.h>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -32,7 +31,11 @@ void print_help()
 		<< "list                 list out all results found so far\n"
 		<< "set [index] [value]  set a new value for a result\n"
 		<< "setall [value]       set a new value for all results\n"
-		<< "= [value]            find matching values from the process\n"
+		<< "=                    find values that haven't changed since last scan\n"
+		<< "!                    find values that have changed since last scan\n"
+		<< "= [value]            find matching values"
+		<< "> [value]            find values higher than the given value\n"
+		<< "< [value]            find values lower than the given value\n"
 		<< "quit                 exit the program\n";
 }
 
@@ -138,10 +141,25 @@ int main(int argc, char** argv)
 			continue;
 		}
 
+		if (!first_search && is_cmd("!", 1))
+		{
+			harava::scope_timer timer("scan duration: ");
+			results = process_memory.refine_search_changed(results);
+			std::cout << "results: " << results.size() << '\n';
+			continue;
+		}
+
+		if (!first_search && is_cmd("=", 1))
+		{
+			harava::scope_timer timer("scan duration: ");
+			results = process_memory.refine_search_unchanced(results);
+			std::cout << "results: " << results.size() << '\n';
+			continue;
+		}
 
 		if (is_cmd("=", 2) || is_cmd("<", 2) || is_cmd(">", 2))
 		{
-			std::chrono::time_point scan_start = std::chrono::steady_clock::now();
+			harava::scope_timer timer("scan duration: ");
 
 			harava::type_bundle value(tokens[1]);
 			if (first_search)
@@ -154,9 +172,7 @@ int main(int argc, char** argv)
 				results = process_memory.refine_search(value, results, tokens.at(0).at(0));
 			}
 
-			std::chrono::time_point scan_end = std::chrono::steady_clock::now();
-			std::cout << "scan duration: " << std::dec << std::chrono::duration_cast<std::chrono::milliseconds>(scan_end - scan_start) << "\n"
-				<< "results: " << results.size() << '\n';
+			std::cout << "results: " << results.size() << '\n';
 
 			continue;
 		}

@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace harava
@@ -35,13 +36,17 @@ namespace harava
 		DOUBLE	= 3
 	};
 
+	u8 datatype_to_size();
+
 	struct result
 	{
 		u8 value[8];
 		size_t location;
 		u64 region_id;
 		datatype type;
+
 		void print_info() const;
+		bool compare_bytes(const std::vector<u8>& bytes) const;
 	};
 
 	class memory
@@ -50,6 +55,8 @@ namespace harava
 		memory(const i32 pid);
 		std::vector<result> search(const type_bundle value, const char comparison);
 		std::vector<result> refine_search(const type_bundle new_value, const std::vector<result>& old_results, const char comparison);
+		std::vector<result> refine_search_changed(const std::vector<result>& old_results);
+		std::vector<result> refine_search_unchanced(const std::vector<result>& old_results);
 		void set(result& result, const type_bundle value);
 		u64 region_count() const;
 
@@ -101,6 +108,14 @@ namespace harava
 
 		// read a range of bytes from a file
 		std::vector<u8> read_region(std::ifstream& file, const size_t start, const size_t end);
+
+		struct region_snapshot
+		{
+			memory_region* region;
+			std::vector<u8> bytes;
+		};
+
+		std::unordered_map<u64, region_snapshot> snapshot_regions(const std::vector<result>& results);
 
 		const i32 pid;
 		const std::string proc_path;

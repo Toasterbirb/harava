@@ -43,6 +43,13 @@ namespace harava
 	:_int(std::stoi(value)), _long(std::stol(value)), _float(std::stof(value)), _double(std::stold(value))
 	{}
 
+	u8 datatype_to_size(const datatype type)
+	{
+		return type == datatype::INT || type == datatype::FLOAT
+			? 4
+			: 8;
+	}
+
 	void result::print_info() const
 	{
 		std::cout << std::left << std::hex << location << " | ";
@@ -65,6 +72,23 @@ namespace harava
 				std::cout << "double";
 				break;
 		}
+	}
+
+	bool result::compare_bytes(const std::vector<u8>& bytes) const
+	{
+		const u8 type_size = datatype_to_size(type);
+
+		bool match = true;
+		for (u8 i = 0; i < type_size; ++i)
+		{
+			if (value[i] != bytes[i + location])
+			{
+				match = false;
+				break;
+			}
+		}
+
+		return match;
 	}
 
 	memory::memory(const i32 pid)
@@ -164,9 +188,7 @@ namespace harava
 
 					result r;
 
-					const u8 byte_count = type == datatype::INT || type == datatype::FLOAT
-						? 4
-						: 8;
+					const u8 byte_count = datatype_to_size(type);
 
 					for (u8 j = 0; j < byte_count; ++j)
 						r.value[j] = bytes.at(i + j);
@@ -204,37 +226,7 @@ namespace harava
 		std::vector<result> new_results;
 		new_results.reserve(old_results.size() / 4);
 
-		struct region_snapshot
-		{
-			memory_region* region;
-			std::vector<u8> bytes;
-		};
-
-		std::unordered_map<u64, region_snapshot> region_cache;
-
-		// take snapshots of the memory regions
-		std::cout << "taking a memory snapshot\n" << std::flush;
-		{
-			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
-			if (!mem.is_open()) [[unlikely]]
-				throw "can't open " + mem_path;
-
-			for (result result : old_results)
-			{
-				if (region_cache.contains(result.region_id)) [[likely]]
-					continue;
-
-				memory_region* region = &get_region(result.region_id);
-
-				region_snapshot snapshot;
-				snapshot.bytes = read_region(mem, region->start, region->end);
-				snapshot.region = region;
-
-				region_cache[result.region_id] = snapshot;
-				std::cout << '.' << std::flush;
-			}
-			std::cout << '\n';
-		}
+		std::unordered_map<u64, region_snapshot> region_cache = snapshot_regions(old_results);
 
 		std::cout << "processing bytes" << std::endl;
 		for (result result : old_results)
@@ -295,6 +287,36 @@ namespace harava
 					check_value(new_value._double);
 					break;
 			}
+		}
+
+		return new_results;
+	}
+
+	std::vector<result> memory::refine_search_changed(const std::vector<result>& old_results)
+	{
+		std::unordered_map<u64, region_snapshot> region_cache = snapshot_regions(old_results);
+		std::vector<result> new_results;
+
+		for (result result : old_results)
+		{
+			const region_snapshot& snapshot = region_cache.at(result.region_id);
+			if (!result.compare_bytes(snapshot.bytes))
+				new_results.push_back(result);
+		}
+
+		return new_results;
+	}
+
+	std::vector<result> memory::refine_search_unchanced(const std::vector<result>& old_results)
+	{
+		std::unordered_map<u64, region_snapshot> region_cache = snapshot_regions(old_results);
+		std::vector<result> new_results;
+
+		for (result result : old_results)
+		{
+			const region_snapshot& snapshot = region_cache.at(result.region_id);
+			if (result.compare_bytes(snapshot.bytes))
+				new_results.push_back(result);
 		}
 
 		return new_results;
@@ -377,5 +399,35 @@ namespace harava
 		file.read((char*)&bytes.data()[0], bytes.size());
 
 		return bytes;
+	}
+
+	std::unordered_map<u64, memory::region_snapshot> memory::snapshot_regions(const std::vector<result>& results)
+	{
+		std::unordered_map<u64, region_snapshot> region_cache;
+
+		std::cout << "taking a memory snapshot\n" << std::flush;
+		{
+			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
+			if (!mem.is_open()) [[unlikely]]
+				throw "can't open " + mem_path;
+
+			for (result result : results)
+			{
+				if (region_cache.contains(result.region_id)) [[likely]]
+					continue;
+
+				memory_region* region = &get_region(result.region_id);
+
+				region_snapshot snapshot;
+				snapshot.bytes = read_region(mem, region->start, region->end);
+				snapshot.region = region;
+
+				region_cache[result.region_id] = snapshot;
+				std::cout << '.' << std::flush;
+			}
+			std::cout << '\n';
+		}
+
+		return region_cache;
 	}
 }
