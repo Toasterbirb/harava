@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <ostream>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -58,6 +59,9 @@ namespace harava
 		const std::string maps_path = proc_path + "/maps";
 		std::ifstream maps(maps_path);
 
+		const std::regex lib_regex("^.*\\.so$");
+		const std::regex lib_versioned_regex("^.*\\.so\\.[.0-9]*$");
+
 		std::string line;
 		while (std::getline(maps, line))
 		{
@@ -71,8 +75,20 @@ namespace harava
 			if (!perms.starts_with("rw"))
 				continue;
 
-			// // Skip memory regions that are for external libraries
-			if (file_path.starts_with("/lib64") || file_path.starts_with("/usr/lib"))
+			// Skip memory regions that are for external libraries
+			if (file_path.starts_with("/lib64")
+				|| file_path.starts_with("/usr/lib")
+				|| file_path.starts_with("/dev")
+				|| file_path.starts_with("/memfd")
+				// need to use the full line for some things due to whitespace
+				|| line.ends_with(".dll")
+				|| line.ends_with("wine64")
+				|| line.ends_with("wine64-preloader")
+				|| line.ends_with(".drv"))
+				continue;
+
+			// Skip library files
+			if (std::regex_match(file_path, lib_regex) || std::regex_match(file_path, lib_versioned_regex))
 				continue;
 
 			regions.emplace_back(range);
