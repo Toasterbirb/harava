@@ -31,6 +31,7 @@ void print_help()
 		<< "help                 show a list of commands\n"
 		<< "list                 list out all results found so far\n"
 		<< "set [index] [value]  set a new value for a result\n"
+		<< "setall [value]       set a new value for all results\n"
 		<< "= [value]            find matching values from the process\n"
 		<< "quit                 exit the program\n";
 }
@@ -126,6 +127,14 @@ int main(int argc, char** argv)
 
 			harava::type_bundle value(new_value);
 			process_memory.set(results.at(index), value);
+
+			continue;
+		}
+
+		if (is_cmd("setall", 2))
+		{
+			for (harava::result& r : results)
+				process_memory.set(r, tokens.at(1));
 
 			continue;
 		}
