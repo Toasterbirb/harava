@@ -25,6 +25,15 @@ std::vector<std::string> tokenize_string(const std::string& line, const char sep
 	return tokens;
 }
 
+void print_help()
+{
+	std::cout
+		<< "help                 show a list of commands\n"
+		<< "list                 list out all results found so far\n"
+		<< "set [index] [value]  set a new value for a result\n"
+		<< "= [value]            find matching values from the process\n"
+		<< "quit                 exit the program\n";
+}
 
 int main(int argc, char** argv)
 {
@@ -59,10 +68,23 @@ int main(int argc, char** argv)
 	{
 		std::cout << " > ";
 
-		std::string command;
-		std::cin >> command;
+		constexpr size_t max_command_size = 64;
 
-		if (command == "list")
+		char buffer[max_command_size];
+		std::cin.getline(buffer, max_command_size, '\n');
+		std::string command = buffer;
+
+		std::vector<std::string> tokens = tokenize_string(command, ' ');
+
+		const auto is_cmd = [&tokens, &command](const std::string& command_name, const size_t arg_count) -> bool
+		{
+			return command_name == tokens.at(0) && arg_count == tokens.size();
+		};
+
+		if (is_cmd("exit", 1) || is_cmd("quit", 1)) [[unlikely]]
+			break;
+
+		if (is_cmd("list", 1))
 		{
 			u32 index{};
 			for (const harava::result& result : results)
@@ -97,16 +119,10 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (command == "set")
+		if (is_cmd("set", 3))
 		{
-			i32 index;
-
-			std::cout << "index: ";
-			std::cin >> index;
-
-			std::cout << "new value: ";
-			std::string new_value;
-			std::cin >> new_value;
+			i32 index = std::stoi(tokens.at(1));
+			const std::string& new_value = tokens.at(2);
 
 			harava::type_bundle value(new_value);
 			process_memory.set(results.at(index), value);
@@ -114,24 +130,36 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		std::chrono::time_point scan_start = std::chrono::steady_clock::now();
 
-		if (first_search)
+		if (is_cmd("=", 2))
 		{
-			harava::type_bundle value(command);
-			results = process_memory.search(value);
-			first_search = false;
+			std::chrono::time_point scan_start = std::chrono::steady_clock::now();
+
+			harava::type_bundle value(tokens[1]);
+			if (first_search)
+			{
+				results = process_memory.search(value);
+				first_search = false;
+			}
+			else
+			{
+				results = process_memory.refine_search(value, results);
+			}
+
+			std::chrono::time_point scan_end = std::chrono::steady_clock::now();
+			std::cout << "scan duration: " << std::dec << std::chrono::duration_cast<std::chrono::milliseconds>(scan_end - scan_start) << "\n"
+				<< "results: " << results.size() << '\n';
+
+			continue;
 		}
-		else
+
+		if (is_cmd("help", 1))
 		{
-			harava::type_bundle value(command);
-			results = process_memory.refine_search(value, results);
+			print_help();
+			continue;
 		}
 
-		std::chrono::time_point scan_end = std::chrono::steady_clock::now();
-
-		std::cout << "scan duration: " << std::dec << std::chrono::duration_cast<std::chrono::milliseconds>(scan_end - scan_start) << "\n"
-			<< "results: " << results.size() << '\n';
+		std::cout << "unknown command\n";
 	}
 
 	return 0;
