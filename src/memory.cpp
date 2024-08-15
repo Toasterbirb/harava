@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 
 namespace harava
 {
@@ -146,9 +147,15 @@ namespace harava
 		if (!mem.is_open())
 			throw "can't open " + mem_path;
 
+		std::unordered_map<u64, memory_region*> region_cache;
+
 		for (result result : old_results)
 		{
-			mem.seekg(result.location + get_region(result.region_id).start, std::ios::beg);
+			if (!region_cache.contains(result.region_id)) [[unlikely]]
+				region_cache[result.region_id] = &get_region(result.region_id);
+
+			memory_region* region = region_cache.at(result.region_id);
+			mem.seekg(result.location + region->start, std::ios::beg);
 
 			const auto check_value = [&mem, &new_results, &result]<typename T>(const T new_value)
 			{
