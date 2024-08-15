@@ -81,9 +81,6 @@ namespace harava
 			throw "no suitable memory regions could be found";
 
 		std::cout << "found " << regions.size() << " suitable regions\n";
-
-		for (const memory_region region : regions)
-			std::cout << std::hex << region.start << " -> " << region.end << '\n';
 	}
 
 	std::vector<result> memory::search(const type_bundle value)
@@ -269,6 +266,11 @@ namespace harava
 				break;
 			}
 		}
+	}
+
+	u64 memory::region_count() const
+	{
+		return regions.size();
 	}
 
 	memory_region& memory::get_region(const u64 id)

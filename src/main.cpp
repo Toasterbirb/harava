@@ -1,6 +1,7 @@
 #include "Memory.hpp"
 #include "Types.hpp"
 
+#include <chrono>
 #include <clipp.h>
 #include <iostream>
 #include <sstream>
@@ -113,6 +114,8 @@ int main(int argc, char** argv)
 			continue;
 		}
 
+		std::chrono::time_point scan_start = std::chrono::steady_clock::now();
+
 		if (first_search)
 		{
 			harava::type_bundle value(command);
@@ -125,7 +128,10 @@ int main(int argc, char** argv)
 			results = process_memory.refine_search(value, results);
 		}
 
-		std::cout << "results: " << std::dec << results.size() << '\n';
+		std::chrono::time_point scan_end = std::chrono::steady_clock::now();
+
+		std::cout << std::dec << std::chrono::duration_cast<std::chrono::milliseconds>(scan_end - scan_start) << "\n"
+			<< "results: " << results.size() << '\n';
 	}
 
 	return 0;

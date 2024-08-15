@@ -48,6 +48,7 @@ namespace harava
 		std::vector<result> search(const type_bundle value);
 		std::vector<result> refine_search(const type_bundle new_value, const std::vector<result>& old_results);
 		void set(result& result, const type_bundle value);
+		u64 region_count() const;
 
 		template<typename T>
 		T get_result_value(const result result)
