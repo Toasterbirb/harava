@@ -59,19 +59,19 @@ namespace harava
 		switch(type)
 		{
 			case datatype::INT:
-				std::cout << "int";
+				std::cout << "i32";
 				break;
 
 			case datatype::LONG:
-				std::cout << "long";
+				std::cout << "i64";
 				break;
 
 			case datatype::FLOAT:
-				std::cout << "float";
+				std::cout << "f32";
 				break;
 
 			case datatype::DOUBLE:
-				std::cout << "double";
+				std::cout << "f64";
 				break;
 		}
 	}
