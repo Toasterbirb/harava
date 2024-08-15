@@ -9,7 +9,6 @@
 struct options
 {
 	i32 pid{};
-	bool no_pause = false;
 };
 
 std::vector<std::string> tokenize_string(const std::string& line, const char separator)
@@ -43,8 +42,7 @@ int main(int argc, char** argv)
 
 	auto cli = (
 		clipp::option("--help", "-h").set(show_help) % "display help",
-		(clipp::option("--pid", "-p") & clipp::number("PID").set(opts.pid)) % "PID of the process to inspect",
-		clipp::option("--no-pause").set(opts.no_pause) % "don't pause the process while inspecting its memory"
+		(clipp::option("--pid", "-p") & clipp::number("PID").set(opts.pid)) % "PID of the process to inspect"
 	);
 
 	if (!clipp::parse(argc, argv, cli))
