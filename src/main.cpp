@@ -65,36 +65,55 @@ int main(int argc, char** argv)
 		{
 			u32 index{};
 			for (const harava::result& result : results)
-				std::cout << std::dec << "[" << index++ << "] " << std::hex << result.location << '\n';
+			{
+				std::cout << std::dec << "[" << index++ << "] ";
+				result.print_info();
+				std::cout << '\n';
+			}
+
 
 			continue;
 		}
 
 		if (command == "set")
 		{
-			i32 index, new_value;
+			i32 index;
 
 			std::cout << "index: ";
 			std::cin >> index;
 
 			std::cout << "new value: ";
+			std::string new_value;
 			std::cin >> new_value;
 
-			process_memory.set(results.at(index), new_value);
+			const i32 new_value_int = std::stoi(new_value);
+			const i64 new_value_long = std::stol(new_value);
+			const f32 new_value_float = std::stof(new_value);
+			const f64 new_value_double = std::stold(new_value);
+
+
+			process_memory.set(results.at(index), new_value_int, new_value_long, new_value_float, new_value_double);
 
 			continue;
 		}
 
 		if (first_search)
 		{
-			const i32 value = std::stoi(command);
-			results = process_memory.search(value);
+			const i32 value_int = std::stoi(command);
+			const i64 value_long = std::stol(command);
+			const f32 value_float = std::stof(command);
+			const f64 value_double = std::stold(command);
+			results = process_memory.search(value_int, value_long, value_float, value_double);
 			first_search = false;
 		}
 		else
 		{
-			const i32 value = std::stoi(command);
-			results = process_memory.refine_search(value, results);
+			const i32 value_int = std::stoi(command);
+			const i64 value_long = std::stol(command);
+			const f32 value_float = std::stof(command);
+			const f64 value_double = std::stold(command);
+
+			results = process_memory.refine_search(value_int, value_long, value_float, value_double, results);
 		}
 
 		std::cout << "results: " << std::dec << results.size() << '\n';

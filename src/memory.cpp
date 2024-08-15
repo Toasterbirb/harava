@@ -1,6 +1,7 @@
 #include "Memory.hpp"
 
 #include <cassert>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -17,6 +18,30 @@ namespace harava
 		hex_ss >> start >> end;
 
 		id = start ^ (end << 1);
+	}
+
+	void result::print_info() const
+	{
+		std::cout << std::left << std::hex << location << " | ";
+
+		switch(type)
+		{
+			case datatype::INT:
+				std::cout << "int";
+				break;
+
+			case datatype::LONG:
+				std::cout << "long";
+				break;
+
+			case datatype::FLOAT:
+				std::cout << "float";
+				break;
+
+			case datatype::DOUBLE:
+				std::cout << "double";
+				break;
+		}
 	}
 
 	memory::memory(const i32 pid)
@@ -55,7 +80,7 @@ namespace harava
 			std::cout << std::hex << region.start << " -> " << region.end << '\n';
 	}
 
-	std::vector<result> memory::search(const i32 value)
+	std::vector<result> memory::search(const i32 value_int, const i64 value_long, const f32 value_float, const f64 value_double)
 	{
 		std::vector<result> results;
 
@@ -67,19 +92,39 @@ namespace harava
 
 			u64 region_result_count{};
 
-			for (size_t i = 0; i < bytes.size() - sizeof(int); ++i)
+			for (size_t i = 0; i < bytes.size() - sizeof(double); ++i)
 			{
-				const i32 cur_value = bytes_to_int(bytes.data(), i);
-
-				if (cur_value == value)
+				const auto handle_result = [&](auto a, auto b, datatype type)
 				{
+					if (a != b)
+						return;
+
 					result r;
-					r.value = value;
+
+					if (type == datatype::INT || type == datatype::FLOAT)
+						r.value = { bytes.at(i), bytes.at(i + 1), bytes.at(i + 2), bytes.at(i + 3) };
+					else if (type == datatype::LONG || type == datatype::DOUBLE)
+						r.value = { bytes.at(i), bytes.at(i + 1), bytes.at(i + 2), bytes.at(i + 3),
+								bytes.at(i + 4), bytes.at(i + 5), bytes.at(i + 6), bytes.at(i + 7)};
+					else
+						throw "unimplemented type";
+
 					r.location = i;
 					r.region_id = region.id;
+					r.type = type;
 					results.push_back(r);
 					++region_result_count;
-				}
+				};
+
+				const i32 cur_value_int = interpret_bytes<i32>(bytes.data(), i, sizeof(i32));
+				const i64 cur_value_long = interpret_bytes<i64>(bytes.data(), i, sizeof(i64));
+				const f32 cur_value_float = interpret_bytes<f32>(bytes.data(), i, sizeof(f32));
+				const f64 cur_value_double = interpret_bytes<f64>(bytes.data(), i, sizeof(f64));
+
+				handle_result(value_int, cur_value_int, datatype::INT);
+				handle_result(value_long, cur_value_long, datatype::LONG);
+				handle_result(value_float, cur_value_float, datatype::FLOAT);
+				handle_result(value_double, cur_value_double, datatype::DOUBLE);
 			}
 
 			if (region_result_count == 0)
@@ -89,7 +134,7 @@ namespace harava
 		return results;
 	}
 
-	std::vector<result> memory::refine_search(const i32 new_value, const std::vector<result>& old_results)
+	std::vector<result> memory::refine_search(const i32 new_value_int, const i64 new_value_long, const f32 new_value_float, const f64 new_value_double, const std::vector<result>& old_results)
 	{
 		std::vector<result> new_results;
 
@@ -101,39 +146,66 @@ namespace harava
 		{
 			mem.seekg(result.location + get_region(result.region_id).start, std::ios::beg);
 
-			i32 value{};
-			mem.read((char*)&value, sizeof(int));
-
-			if (value == new_value)
+			const auto check_value = [&mem, &new_results, &result]<typename T>(const T new_value)
 			{
-				result.value = new_value;
-				new_results.push_back(result);
+				T value{};
+				mem.read((char*)&value, sizeof(T));
+
+				if (new_value == value)
+					new_results.push_back(result);
+			};
+
+			switch (result.type)
+			{
+				case datatype::INT:
+					check_value(new_value_int);
+					break;
+
+				case datatype::LONG:
+					check_value(new_value_long);
+					break;
+
+				case datatype::FLOAT:
+					check_value(new_value_float);
+					break;
+
+				case datatype::DOUBLE:
+					check_value(new_value_double);
+					break;
 			}
 		}
 
 		return new_results;
 	}
 
-	void memory::set(result& result, const i32 new_value)
+	void memory::set(result& result, const i32 new_value_int, const i64 new_value_long, const f32 new_value_float, const f64 new_value_double)
 	{
-		result.value = new_value;
+		// result.value = new_value;
 
 		std::fstream mem(mem_path, std::ios::out | std::ios::binary);
 		if (!mem.is_open())
 			throw "can't open " + mem_path;
 
 		mem.seekg(result.location + get_region(result.region_id).start, std::ios::beg);
-		mem.write((char*)&new_value, sizeof(int));
-	}
 
-	i32 memory::bytes_to_int(const u8* bytes, size_t location)
-	{
-		i32 value = 0;
+		switch (result.type)
+		{
+			case datatype::INT:
+				mem.write((char*)&new_value_int, sizeof(i32));
+				break;
 
-		for (u8 i = 0; i < 4; ++i)
-			value += bytes[location + i] << i * 8;
+			case datatype::LONG:
+				mem.write((char*)&new_value_long, sizeof(i64));
+				break;
 
-		return value;
+			case datatype::FLOAT:
+				mem.write((char*)&new_value_float, sizeof(f32));
+				break;
+
+			case datatype::DOUBLE:
+				mem.write((char*)&new_value_double, sizeof(f64));
+				break;
+		}
 	}
 
 	memory_region& memory::get_region(const u64 id)
