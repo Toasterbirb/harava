@@ -162,9 +162,6 @@ namespace harava
 					if (!comparison_result)
 						return;
 
-					// if (a != b) [[likely]]
-					// 	return;
-
 					result r;
 
 					const u8 byte_count = type == datatype::INT || type == datatype::FLOAT
@@ -278,9 +275,6 @@ namespace harava
 						std::cout << "invalid comparison\n";
 						return;
 				}
-
-				// if (new_value == v.type) [[unlikely]]
-				// 	new_results.push_back(result);
 			};
 
 			switch (result.type)
