@@ -91,9 +91,11 @@ namespace harava
 		std::vector<result> results;
 		results.reserve(100'000);
 
+		std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
+
 		for (memory_region& region : regions)
 		{
-			std::vector<u8> bytes = read_region(mem_path, region.start, region.end);
+			std::vector<u8> bytes = read_region(mem, region.start, region.end);
 
 			// go through the bytes one by one
 
@@ -144,30 +146,50 @@ namespace harava
 	{
 		std::vector<result> new_results;
 
-		std::fstream mem(mem_path, std::ios::in | std::ios::binary);
-		if (!mem.is_open()) [[unlikely]]
-			throw "can't open " + mem_path;
+		struct region_snapshot
+		{
+			memory_region* region;
+			std::vector<u8> bytes;
+		};
 
-		std::unordered_map<u64, memory_region*> region_cache;
+		std::unordered_map<u64, region_snapshot> region_cache;
+
+		// take snapshots of the memory regions
+		{
+			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
+			if (!mem.is_open()) [[unlikely]]
+				throw "can't open " + mem_path;
+
+			for (result result : old_results)
+			{
+				if (region_cache.contains(result.region_id)) [[likely]]
+					continue;
+
+				memory_region* region = &get_region(result.region_id);
+
+				region_snapshot snapshot;
+				snapshot.bytes = read_region(mem, region->start, region->end);
+				snapshot.region = region;
+
+				region_cache[result.region_id] = snapshot;
+			}
+		}
 
 		for (result result : old_results)
 		{
-			if (!region_cache.contains(result.region_id)) [[unlikely]]
-				region_cache[result.region_id] = &get_region(result.region_id);
+			const region_snapshot& snapshot = region_cache.at(result.region_id);
 
-			memory_region* region = region_cache.at(result.region_id);
-			mem.seekg(result.location + region->start, std::ios::beg);
-
-			const auto check_value = [&mem, &new_results, &result]<typename T>(const T new_value)
+			const auto check_value = [&new_results, &result, &snapshot]<typename T>(const T new_value)
 			{
-				T value{};
-				mem.read((char*)&value, sizeof(T));
+				const u64 offset = result.location;
 
 				type_as_bytes<T> v;
-				v.type = value;
+				for (u8 i = 0; i < sizeof(T); ++i)
+					v.bytes[i] = snapshot.bytes[i + offset];
+
 				memcpy(result.value, v.bytes, max_type_size);
 
-				if (new_value == value) [[unlikely]]
+				if (new_value == v.type) [[unlikely]]
 					new_results.push_back(result);
 			};
 
@@ -257,17 +279,10 @@ namespace harava
 		throw "no region could be found with the given id";
 	}
 
-	std::vector<u8> memory::read_region(const std::string& path, const size_t start, const size_t end)
+	std::vector<u8> memory::read_region(std::ifstream& file, const size_t start, const size_t end)
 	{
 		std::vector<u8> bytes;
 		bytes.resize(end - start);
-
-		std::ifstream file(path, std::ios::binary);
-		if (!file.is_open()) [[unlikely]]
-		{
-			std::cerr << "can't open " << mem_path << '\n';
-			return {};
-		}
 
 		file.seekg(start, std::ios::beg);
 		file.read((char*)&bytes.data()[0], bytes.size());

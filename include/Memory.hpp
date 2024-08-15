@@ -96,7 +96,7 @@ namespace harava
 		memory_region& get_region(const u64 id);
 
 		// read a range of bytes from a file
-		std::vector<u8> read_region(const std::string& path, const size_t start, const size_t end);
+		std::vector<u8> read_region(std::ifstream& file, const size_t start, const size_t end);
 
 		const i32 pid;
 		const std::string proc_path;
