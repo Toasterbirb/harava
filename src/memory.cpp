@@ -145,6 +145,7 @@ namespace harava
 	std::vector<result> memory::refine_search(const type_bundle new_value, const std::vector<result>& old_results)
 	{
 		std::vector<result> new_results;
+		new_results.reserve(old_results.size() / 4);
 
 		struct region_snapshot
 		{
