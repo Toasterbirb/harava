@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <clipp.h>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -91,7 +92,7 @@ int main(int argc, char** argv)
 				std::cout << std::dec << "[" << index++ << "] ";
 				result.print_info();
 
-				std::cout << " " << std::dec;
+				std::cout << " | " << std::dec;
 
 				switch (result.type)
 				{
