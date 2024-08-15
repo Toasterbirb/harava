@@ -20,6 +20,10 @@ namespace harava
 		id = start ^ (end << 1);
 	}
 
+	type_bundle::type_bundle(const std::string& value)
+	:_int(std::stoi(value)), _long(std::stol(value)), _float(std::stof(value)), _double(std::stold(value))
+	{}
+
 	void result::print_info() const
 	{
 		std::cout << std::left << std::hex << location << " | ";
@@ -80,7 +84,7 @@ namespace harava
 			std::cout << std::hex << region.start << " -> " << region.end << '\n';
 	}
 
-	std::vector<result> memory::search(const i32 value_int, const i64 value_long, const f32 value_float, const f64 value_double)
+	std::vector<result> memory::search(const type_bundle value)
 	{
 		std::vector<result> results;
 
@@ -121,10 +125,10 @@ namespace harava
 				const f32 cur_value_float = interpret_bytes<f32>(bytes.data(), i, sizeof(f32));
 				const f64 cur_value_double = interpret_bytes<f64>(bytes.data(), i, sizeof(f64));
 
-				handle_result(value_int, cur_value_int, datatype::INT);
-				handle_result(value_long, cur_value_long, datatype::LONG);
-				handle_result(value_float, cur_value_float, datatype::FLOAT);
-				handle_result(value_double, cur_value_double, datatype::DOUBLE);
+				handle_result(value._int, cur_value_int, datatype::INT);
+				handle_result(value._long, cur_value_long, datatype::LONG);
+				handle_result(value._float, cur_value_float, datatype::FLOAT);
+				handle_result(value._double, cur_value_double, datatype::DOUBLE);
 			}
 
 			if (region_result_count == 0)
@@ -134,7 +138,7 @@ namespace harava
 		return results;
 	}
 
-	std::vector<result> memory::refine_search(const i32 new_value_int, const i64 new_value_long, const f32 new_value_float, const f64 new_value_double, const std::vector<result>& old_results)
+	std::vector<result> memory::refine_search(const type_bundle new_value, const std::vector<result>& old_results)
 	{
 		std::vector<result> new_results;
 
@@ -158,19 +162,19 @@ namespace harava
 			switch (result.type)
 			{
 				case datatype::INT:
-					check_value(new_value_int);
+					check_value(new_value._int);
 					break;
 
 				case datatype::LONG:
-					check_value(new_value_long);
+					check_value(new_value._long);
 					break;
 
 				case datatype::FLOAT:
-					check_value(new_value_float);
+					check_value(new_value._float);
 					break;
 
 				case datatype::DOUBLE:
-					check_value(new_value_double);
+					check_value(new_value._double);
 					break;
 			}
 		}
@@ -178,7 +182,7 @@ namespace harava
 		return new_results;
 	}
 
-	void memory::set(result& result, const i32 new_value_int, const i64 new_value_long, const f32 new_value_float, const f64 new_value_double)
+	void memory::set(result& result, const type_bundle value)
 	{
 		// result.value = new_value;
 
@@ -191,19 +195,19 @@ namespace harava
 		switch (result.type)
 		{
 			case datatype::INT:
-				mem.write((char*)&new_value_int, sizeof(i32));
+				mem.write((char*)&value._int, sizeof(i32));
 				break;
 
 			case datatype::LONG:
-				mem.write((char*)&new_value_long, sizeof(i64));
+				mem.write((char*)&value._long, sizeof(i64));
 				break;
 
 			case datatype::FLOAT:
-				mem.write((char*)&new_value_float, sizeof(f32));
+				mem.write((char*)&value._float, sizeof(f32));
 				break;
 
 			case datatype::DOUBLE:
-				mem.write((char*)&new_value_double, sizeof(f64));
+				mem.write((char*)&value._double, sizeof(f64));
 				break;
 		}
 	}

@@ -18,6 +18,15 @@ namespace harava
 		bool ignore = false;
 	};
 
+	struct type_bundle
+	{
+		type_bundle(const std::string& value);
+		const i32 _int;
+		const i64 _long;
+		const f32 _float;
+		const f64 _double;
+	};
+
 	enum class datatype
 	{
 		INT, LONG, FLOAT, DOUBLE
@@ -36,9 +45,9 @@ namespace harava
 	{
 	public:
 		memory(const i32 pid);
-		std::vector<result> search(const i32 value_int, const i64 value_long, const f32 value_float, const f64 value_double);
-		std::vector<result> refine_search(const i32 new_value_int, const i64 new_value_long, const f32 new_value_float, const f64 new_value_double, const std::vector<result>& old_results);
-		void set(result& result, const i32 new_value_int, const i64 new_value_long, const f32 new_value_float, const f64 new_value_double);
+		std::vector<result> search(const type_bundle value);
+		std::vector<result> refine_search(const type_bundle new_value, const std::vector<result>& old_results);
+		void set(result& result, const type_bundle value);
 
 	private:
 		/**

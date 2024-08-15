@@ -86,34 +86,22 @@ int main(int argc, char** argv)
 			std::string new_value;
 			std::cin >> new_value;
 
-			const i32 new_value_int = std::stoi(new_value);
-			const i64 new_value_long = std::stol(new_value);
-			const f32 new_value_float = std::stof(new_value);
-			const f64 new_value_double = std::stold(new_value);
-
-
-			process_memory.set(results.at(index), new_value_int, new_value_long, new_value_float, new_value_double);
+			harava::type_bundle value(new_value);
+			process_memory.set(results.at(index), value);
 
 			continue;
 		}
 
 		if (first_search)
 		{
-			const i32 value_int = std::stoi(command);
-			const i64 value_long = std::stol(command);
-			const f32 value_float = std::stof(command);
-			const f64 value_double = std::stold(command);
-			results = process_memory.search(value_int, value_long, value_float, value_double);
+			harava::type_bundle value(command);
+			results = process_memory.search(value);
 			first_search = false;
 		}
 		else
 		{
-			const i32 value_int = std::stoi(command);
-			const i64 value_long = std::stol(command);
-			const f32 value_float = std::stof(command);
-			const f64 value_double = std::stold(command);
-
-			results = process_memory.refine_search(value_int, value_long, value_float, value_double, results);
+			harava::type_bundle value(command);
+			results = process_memory.refine_search(value, results);
 		}
 
 		std::cout << "results: " << std::dec << results.size() << '\n';
