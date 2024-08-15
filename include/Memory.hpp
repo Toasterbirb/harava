@@ -2,7 +2,6 @@
 
 #include "Types.hpp"
 
-#include <array>
 #include <fstream>
 #include <string>
 #include <vector>
