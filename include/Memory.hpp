@@ -29,7 +29,10 @@ namespace harava
 
 	enum class datatype
 	{
-		INT, LONG, FLOAT, DOUBLE
+		INT		= 0,
+		LONG	= 1,
+		FLOAT	= 2,
+		DOUBLE	= 3
 	};
 
 	struct result
@@ -45,8 +48,8 @@ namespace harava
 	{
 	public:
 		memory(const i32 pid);
-		std::vector<result> search(const type_bundle value);
-		std::vector<result> refine_search(const type_bundle new_value, const std::vector<result>& old_results);
+		std::vector<result> search(const type_bundle value, const char comparison);
+		std::vector<result> refine_search(const type_bundle new_value, const std::vector<result>& old_results, const char comparison);
 		void set(result& result, const type_bundle value);
 		u64 region_count() const;
 

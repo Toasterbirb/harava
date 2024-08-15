@@ -13,6 +13,21 @@
 
 namespace harava
 {
+	const static auto comparison_func_equal = [](const auto a, const auto b) -> bool
+	{
+		return a == b;
+	};
+
+	const static auto comparison_func_less_than = [](const auto a, const auto b) -> bool
+	{
+		return a > b;
+	};
+
+	const static auto comparison_func_more_than = [](const auto a, const auto b) -> bool
+	{
+		return a < b;
+	};
+
 	memory_region::memory_region(const std::string& range_str)
 	{
 		size_t line_pos = range_str.find('-');
@@ -100,7 +115,7 @@ namespace harava
 		std::cout << "found " << regions.size() << " suitable regions\n";
 	}
 
-	std::vector<result> memory::search(const type_bundle value)
+	std::vector<result> memory::search(const type_bundle value, const char comparison)
 	{
 		std::vector<result> results;
 		results.reserve(100'000);
@@ -119,8 +134,36 @@ namespace harava
 			{
 				const auto handle_result = [&](auto a, auto b, datatype type)
 				{
-					if (a != b) [[likely]]
+					bool comparison_result = false;
+					const auto comp = [&](auto f)
+					{
+						comparison_result = f(a, b);
+					};
+
+					switch (comparison)
+					{
+						case '=':
+							comp(comparison_func_equal);
+							break;
+
+						case '<':
+							comp(comparison_func_less_than);
+							break;
+
+						case '>':
+							comp(comparison_func_more_than);
+							break;
+
+						default:
+							std::cout << "invalid comparison\n";
+							return;
+					}
+
+					if (!comparison_result)
 						return;
+
+					// if (a != b) [[likely]]
+					// 	return;
 
 					result r;
 
@@ -159,7 +202,7 @@ namespace harava
 		return results;
 	}
 
-	std::vector<result> memory::refine_search(const type_bundle new_value, const std::vector<result>& old_results)
+	std::vector<result> memory::refine_search(const type_bundle new_value, const std::vector<result>& old_results, const char comparison)
 	{
 		std::vector<result> new_results;
 		new_results.reserve(old_results.size() / 4);
@@ -201,7 +244,7 @@ namespace harava
 		{
 			const region_snapshot& snapshot = region_cache.at(result.region_id);
 
-			const auto check_value = [&new_results, &result, &snapshot]<typename T>(const T new_value)
+			const auto check_value = [&]<typename T>(const T new_value)
 			{
 				const u64 offset = result.location;
 
@@ -211,8 +254,33 @@ namespace harava
 
 				memcpy(result.value, v.bytes, max_type_size);
 
-				if (new_value == v.type) [[unlikely]]
-					new_results.push_back(result);
+				const auto comp = [&](auto f)
+				{
+					if (f(new_value, v.type))
+						new_results.push_back(result);
+				};
+
+				switch (comparison)
+				{
+					case '=':
+						comp(comparison_func_equal);
+						break;
+
+					case '<':
+						comp(comparison_func_less_than);
+						break;
+
+					case '>':
+						comp(comparison_func_more_than);
+						break;
+
+					default:
+						std::cout << "invalid comparison\n";
+						return;
+				}
+
+				// if (new_value == v.type) [[unlikely]]
+				// 	new_results.push_back(result);
 			};
 
 			switch (result.type)

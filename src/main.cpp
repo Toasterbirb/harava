@@ -139,19 +139,19 @@ int main(int argc, char** argv)
 		}
 
 
-		if (is_cmd("=", 2))
+		if (is_cmd("=", 2) || is_cmd("<", 2) || is_cmd(">", 2))
 		{
 			std::chrono::time_point scan_start = std::chrono::steady_clock::now();
 
 			harava::type_bundle value(tokens[1]);
 			if (first_search)
 			{
-				results = process_memory.search(value);
+				results = process_memory.search(value, tokens.at(0).at(0));
 				first_search = false;
 			}
 			else
 			{
-				results = process_memory.refine_search(value, results);
+				results = process_memory.refine_search(value, results, tokens.at(0).at(0));
 			}
 
 			std::chrono::time_point scan_end = std::chrono::steady_clock::now();
