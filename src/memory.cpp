@@ -28,6 +28,8 @@ namespace harava
 		return a < b;
 	};
 
+	static u16 memory_region_count = 0;
+
 	memory_region::memory_region(const std::string& range_str)
 	{
 		size_t line_pos = range_str.find('-');
@@ -36,7 +38,7 @@ namespace harava
 		hex_ss << std::hex << range_str.substr(0, line_pos) << " " << range_str.substr(line_pos + 1, range_str.size() - line_pos - 1);
 		hex_ss >> start >> end;
 
-		id = start ^ (end << 1);
+		id = memory_region_count++;
 	}
 
 	type_bundle::type_bundle(const std::string& value)
@@ -226,7 +228,7 @@ namespace harava
 		std::vector<result> new_results;
 		new_results.reserve(old_results.size() / 4);
 
-		std::unordered_map<u64, region_snapshot> region_cache = snapshot_regions(old_results);
+		std::unordered_map<u16, region_snapshot> region_cache = snapshot_regions(old_results);
 
 		std::cout << "processing bytes" << std::endl;
 		for (result result : old_results)
@@ -294,7 +296,7 @@ namespace harava
 
 	std::vector<result> memory::refine_search_changed(const std::vector<result>& old_results)
 	{
-		std::unordered_map<u64, region_snapshot> region_cache = snapshot_regions(old_results);
+		std::unordered_map<u16, region_snapshot> region_cache = snapshot_regions(old_results);
 		std::vector<result> new_results;
 
 		for (result result : old_results)
@@ -309,7 +311,7 @@ namespace harava
 
 	std::vector<result> memory::refine_search_unchanced(const std::vector<result>& old_results)
 	{
-		std::unordered_map<u64, region_snapshot> region_cache = snapshot_regions(old_results);
+		std::unordered_map<u16, region_snapshot> region_cache = snapshot_regions(old_results);
 		std::vector<result> new_results;
 
 		for (result result : old_results)
@@ -381,7 +383,7 @@ namespace harava
 		return regions.size();
 	}
 
-	memory_region& memory::get_region(const u64 id)
+	memory_region& memory::get_region(const u16 id)
 	{
 		for (memory_region& region : regions)
 			if (region.id == id)
@@ -401,9 +403,9 @@ namespace harava
 		return bytes;
 	}
 
-	std::unordered_map<u64, memory::region_snapshot> memory::snapshot_regions(const std::vector<result>& results)
+	std::unordered_map<u16, memory::region_snapshot> memory::snapshot_regions(const std::vector<result>& results)
 	{
-		std::unordered_map<u64, region_snapshot> region_cache;
+		std::unordered_map<u16, region_snapshot> region_cache;
 
 		std::cout << "taking a memory snapshot\n" << std::flush;
 		{

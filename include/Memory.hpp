@@ -38,11 +38,13 @@ namespace harava
 
 	u8 datatype_to_size();
 
+
+
 	struct result
 	{
 		u8 value[8];
 		size_t location;
-		u64 region_id;
+		u16 region_id;
 		datatype type;
 
 		void print_info() const;
@@ -104,7 +106,7 @@ namespace harava
 			return v.type;
 		}
 
-		memory_region& get_region(const u64 id);
+		memory_region& get_region(const u16 id);
 
 		// read a range of bytes from a file
 		std::vector<u8> read_region(std::ifstream& file, const size_t start, const size_t end);
@@ -115,7 +117,7 @@ namespace harava
 			std::vector<u8> bytes;
 		};
 
-		std::unordered_map<u64, region_snapshot> snapshot_regions(const std::vector<result>& results);
+		std::unordered_map<u16, region_snapshot> snapshot_regions(const std::vector<result>& results);
 
 		const i32 pid;
 		const std::string proc_path;
