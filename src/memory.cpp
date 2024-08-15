@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -106,13 +107,12 @@ namespace harava
 
 					result r;
 
-					if (type == datatype::INT || type == datatype::FLOAT)
-						r.value = { bytes.at(i), bytes.at(i + 1), bytes.at(i + 2), bytes.at(i + 3) };
-					else if (type == datatype::LONG || type == datatype::DOUBLE)
-						r.value = { bytes.at(i), bytes.at(i + 1), bytes.at(i + 2), bytes.at(i + 3),
-								bytes.at(i + 4), bytes.at(i + 5), bytes.at(i + 6), bytes.at(i + 7)};
-					else
-						throw "unimplemented type";
+					const u8 byte_count = type == datatype::INT || type == datatype::FLOAT
+						? 4
+						: 8;
+
+					for (u8 j = 0; j < byte_count; ++j)
+						r.value[j] = bytes.at(i + j);
 
 					r.location = i;
 					r.region_id = region.id;
@@ -162,6 +162,10 @@ namespace harava
 				T value{};
 				mem.read((char*)&value, sizeof(T));
 
+				type_as_bytes<T> v;
+				v.type = value;
+				memcpy(result.value, v.bytes, max_type_size);
+
 				if (new_value == value)
 					new_results.push_back(result);
 			};
@@ -202,20 +206,44 @@ namespace harava
 		switch (result.type)
 		{
 			case datatype::INT:
+			{
 				mem.write((char*)&value._int, sizeof(i32));
+
+				type_as_bytes<i32> v;
+				v.type = value._int;
+				memcpy(result.value, v.bytes, max_type_size);
 				break;
+			}
 
 			case datatype::LONG:
+			{
 				mem.write((char*)&value._long, sizeof(i64));
+
+				type_as_bytes<i64> v;
+				v.type = value._int;
+				memcpy(result.value, v.bytes, max_type_size);
 				break;
+			}
 
 			case datatype::FLOAT:
+			{
 				mem.write((char*)&value._float, sizeof(f32));
+
+				type_as_bytes<f32> v;
+				v.type = value._int;
+				memcpy(result.value, v.bytes, max_type_size);
 				break;
+			}
 
 			case datatype::DOUBLE:
+			{
 				mem.write((char*)&value._double, sizeof(f64));
+
+				type_as_bytes<f64> v;
+				v.type = value._int;
+				memcpy(result.value, v.bytes, max_type_size);
 				break;
+			}
 		}
 	}
 

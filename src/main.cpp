@@ -68,9 +68,30 @@ int main(int argc, char** argv)
 			{
 				std::cout << std::dec << "[" << index++ << "] ";
 				result.print_info();
+
+				std::cout << " " << std::dec;
+
+				switch (result.type)
+				{
+					case harava::datatype::INT:
+						std::cout << process_memory.get_result_value<i32>(result);
+						break;
+
+					case harava::datatype::LONG:
+						std::cout << process_memory.get_result_value<i64>(result);
+						break;
+
+					case harava::datatype::FLOAT:
+						std::cout << process_memory.get_result_value<f32>(result);
+						break;
+
+					case harava::datatype::DOUBLE:
+						std::cout << process_memory.get_result_value<f64>(result);
+						break;
+				}
+
 				std::cout << '\n';
 			}
-
 
 			continue;
 		}

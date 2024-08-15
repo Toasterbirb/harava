@@ -3,6 +3,7 @@
 #include "Types.hpp"
 
 #include <array>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -34,7 +35,7 @@ namespace harava
 
 	struct result
 	{
-		std::array<u8, 8> value;
+		u8 value[8];
 		size_t location;
 		u64 region_id;
 		datatype type;
@@ -49,7 +50,31 @@ namespace harava
 		std::vector<result> refine_search(const type_bundle new_value, const std::vector<result>& old_results);
 		void set(result& result, const type_bundle value);
 
+		template<typename T>
+		T get_result_value(const result result)
+		{
+			std::fstream mem(mem_path, std::ios::in | std::ios::binary);
+			if (!mem.is_open())
+				throw "can't open " + mem_path;
+
+			mem.seekg(result.location + get_region(result.region_id).start, std::ios::beg);
+
+			T value;
+			mem.read((char*)&value, sizeof(T));
+
+			return value;
+		}
+
 	private:
+		static constexpr u8 max_type_size = 8;
+
+		template<typename T>
+		union type_as_bytes
+		{
+			T type;
+			u8 bytes[max_type_size] = { 0, 0, 0, 0, 0, 0, 0, 0};
+		};
+
 		/**
 		 * @brief Interpret bytes as a type
 		 *
@@ -61,13 +86,7 @@ namespace harava
 		template<typename T>
 		T interpret_bytes(const u8* bytes, const size_t location, const u8 size)
 		{
-			union value
-			{
-				T type;
-				u8 bytes[8];
-			};
-
-			value v;
+			type_as_bytes<T> v;
 
 			for (u8 i = 0; i < size; ++i)
 				v.bytes[i] = bytes[location + i];
