@@ -158,8 +158,7 @@ namespace harava
 		std::unordered_map<u64, region_snapshot> region_cache;
 
 		// take snapshots of the memory regions
-		std::cout << "taking a memory snapshot ... " << std::flush;
-		std::chrono::time_point snapshot_start = std::chrono::steady_clock::now();
+		std::cout << "taking a memory snapshot\n" << std::flush;
 		{
 			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
 			if (!mem.is_open()) [[unlikely]]
@@ -177,11 +176,12 @@ namespace harava
 				snapshot.region = region;
 
 				region_cache[result.region_id] = snapshot;
+				std::cout << '.' << std::flush;
 			}
+			std::cout << '\n';
 		}
-		std::chrono::time_point snapshot_end = std::chrono::steady_clock::now();
-		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(snapshot_end - snapshot_start) << std::endl;
 
+		std::cout << "processing bytes" << std::endl;
 		for (result result : old_results)
 		{
 			const region_snapshot& snapshot = region_cache.at(result.region_id);
