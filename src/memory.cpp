@@ -1,10 +1,12 @@
 #include "Memory.hpp"
 
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -134,7 +136,10 @@ namespace harava
 
 			if (region_result_count == 0)
 				region.ignore = true;
+
+			std::cout << '.' << std::flush;
 		}
+		std::cout << '\n';
 
 		return results;
 	}
@@ -153,6 +158,8 @@ namespace harava
 		std::unordered_map<u64, region_snapshot> region_cache;
 
 		// take snapshots of the memory regions
+		std::cout << "taking a memory snapshot ... " << std::flush;
+		std::chrono::time_point snapshot_start = std::chrono::steady_clock::now();
 		{
 			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
 			if (!mem.is_open()) [[unlikely]]
@@ -172,6 +179,8 @@ namespace harava
 				region_cache[result.region_id] = snapshot;
 			}
 		}
+		std::chrono::time_point snapshot_end = std::chrono::steady_clock::now();
+		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(snapshot_end - snapshot_start) << std::endl;
 
 		for (result result : old_results)
 		{

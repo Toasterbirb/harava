@@ -130,7 +130,7 @@ int main(int argc, char** argv)
 
 		std::chrono::time_point scan_end = std::chrono::steady_clock::now();
 
-		std::cout << std::dec << std::chrono::duration_cast<std::chrono::milliseconds>(scan_end - scan_start) << "\n"
+		std::cout << "scan duration: " << std::dec << std::chrono::duration_cast<std::chrono::milliseconds>(scan_end - scan_start) << "\n"
 			<< "results: " << results.size() << '\n';
 	}
 
