@@ -169,19 +169,6 @@ namespace harava
 						comparison_result = f(a, b);
 					};
 
-					// ignore zero when doing less than or greater than comparisons
-					// to avoid running out of memory
-					//
-					// though you'll still probably run out of memory if doing a direct comparison
-					// with values that are zero, but probably shouldn't make it impossible to find all
-					// values that are zero
-					//
-					// with the less than / more than comparisons though ignoring zeroes is kind of
-					// necessary or else they are unusable even with 32 gigabytes of memory and a bunch
-					// of swap
-					if (b == 0 && comparison != '=')
-						return;
-
 					switch (comparison)
 					{
 						case '=':
