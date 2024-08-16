@@ -23,8 +23,8 @@ namespace harava
 	struct type_bundle
 	{
 		type_bundle(const std::string& value);
-		const i32 _int;
-		const i64 _long;
+		i32 _int;
+		i64 _long;
 		const f32 _float;
 		const f64 _double;
 	};
