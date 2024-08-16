@@ -251,7 +251,7 @@ namespace harava
 
 			const auto check_value = [&]<typename T>(const T new_value)
 			{
-				const u64 offset = result.location;
+				const u32 offset = result.location;
 
 				type_as_bytes<T> v;
 				for (u8 i = 0; i < sizeof(T); ++i)

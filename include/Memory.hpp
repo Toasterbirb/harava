@@ -28,7 +28,7 @@ namespace harava
 		const f64 _double;
 	};
 
-	enum class datatype
+	enum class datatype : u8
 	{
 		INT		= 0,
 		LONG	= 1,
@@ -39,11 +39,10 @@ namespace harava
 	u8 datatype_to_size();
 
 
-
 	struct result
 	{
 		u8 value[8];
-		size_t location;
+		u32 location;
 		u16 region_id;
 		datatype type;
 
