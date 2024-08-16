@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <ostream>
 #include <regex>
@@ -54,7 +55,7 @@ namespace harava
 
 	void result::print_info() const
 	{
-		std::cout << std::left << std::hex << location << " | ";
+		std::cout << std::right << std::hex << std::setw(5) << location << " | ";
 
 		switch(type)
 		{
