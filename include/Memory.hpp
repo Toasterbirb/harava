@@ -54,7 +54,7 @@ namespace harava
 	{
 	public:
 		memory(const i32 pid);
-		std::vector<result> search(const type_bundle value, const char comparison);
+		std::vector<result> search(const u64 memory_limit, const type_bundle value, const char comparison);
 		std::vector<result> refine_search(const type_bundle new_value, const std::vector<result>& old_results, const char comparison);
 		std::vector<result> refine_search_changed(const std::vector<result>& old_results);
 		std::vector<result> refine_search_unchanced(const std::vector<result>& old_results);

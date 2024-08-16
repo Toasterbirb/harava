@@ -10,6 +10,7 @@
 struct options
 {
 	i32 pid{};
+	u64 memory_limit = 8; // limit in gigabytes
 };
 
 std::vector<std::string> tokenize_string(const std::string& line, const char separator)
@@ -49,7 +50,8 @@ int main(int argc, char** argv)
 
 	auto cli = (
 		clipp::option("--help", "-h").set(show_help) % "display help",
-		(clipp::option("--pid", "-p") & clipp::number("PID").set(opts.pid)) % "PID of the process to inspect"
+		(clipp::option("--pid", "-p") & clipp::number("PID").set(opts.pid)) % "PID of the process to inspect",
+		(clipp::option("--memory", "-m") & clipp::number("GB").set(opts.memory_limit)) % "set the maximum memory usage in gigabytes"
 	);
 
 	if (!clipp::parse(argc, argv, cli))
@@ -198,7 +200,7 @@ int main(int argc, char** argv)
 			harava::type_bundle value(tokens[1]);
 			if (first_search)
 			{
-				results = process_memory.search(value, tokens.at(0).at(0));
+				results = process_memory.search(opts.memory_limit, value, tokens.at(0).at(0));
 				first_search = false;
 			}
 			else

@@ -12,6 +12,8 @@
 #include <string>
 #include <unordered_map>
 
+constexpr u64 gigabyte = 1'000'000'000;
+
 namespace harava
 {
 	const static auto comparison_func_equal = [](const auto a, const auto b) -> bool
@@ -142,7 +144,7 @@ namespace harava
 		std::cout << "found " << regions.size() << " suitable regions\n";
 	}
 
-	std::vector<result> memory::search(const type_bundle value, const char comparison)
+	std::vector<result> memory::search(const u64 memory_limit, const type_bundle value, const char comparison)
 	{
 		std::vector<result> results;
 		results.reserve(100'000);
@@ -225,6 +227,13 @@ namespace harava
 				handle_result(value._long, cur_value_long, datatype::LONG);
 				handle_result(value._float, cur_value_float, datatype::FLOAT);
 				handle_result(value._double, cur_value_double, datatype::DOUBLE);
+
+				if (results.size() * sizeof(result) > memory_limit * gigabyte)
+				{
+					std::cout << "\nmemory limit of " << memory_limit << "GB has been reached\n"
+						<< "stopping the search\n";
+					goto abort_search;
+				}
 			}
 
 			if (region_result_count == 0)
@@ -232,6 +241,9 @@ namespace harava
 
 			std::cout << '.' << std::flush;
 		}
+
+	abort_search:
+
 		std::cout << '\n';
 
 		return results;
