@@ -11,9 +11,10 @@ namespace harava
 {
 	struct memory_region
 	{
-		memory_region(const std::string& range_str);
+		memory_region(const std::string& range_str, const bool is_stack);
 		size_t start, end;
 		u16 id;
+		bool is_stack = false;
 
 		// if no results are from this region, ignore it
 		bool ignore = false;

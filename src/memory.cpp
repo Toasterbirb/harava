@@ -33,7 +33,8 @@ namespace harava
 
 	static u16 memory_region_count = 0;
 
-	memory_region::memory_region(const std::string& range_str)
+	memory_region::memory_region(const std::string& range_str, const bool is_stack)
+	:is_stack(is_stack)
 	{
 		size_t line_pos = range_str.find('-');
 
@@ -135,7 +136,18 @@ namespace harava
 			if (std::regex_match(file_path, lib_regex) || std::regex_match(file_path, lib_versioned_regex))
 				continue;
 
-			regions.emplace_back(range);
+			regions.emplace_back(range, file_path == "[stack]");
+		}
+
+		// prioritise stack in-case the process runs out of memory
+		// and not everything can be scanned
+		for (auto it = regions.begin(); it != regions.end(); ++it)
+		{
+			if (it->is_stack && it != regions.begin())
+			{
+				std::iter_swap(regions.begin(), it);
+				break;
+			}
 		}
 
 		if (regions.empty())
