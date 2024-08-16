@@ -67,7 +67,7 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	harava::memory process_memory(opts.pid);
+	std::unique_ptr<harava::memory> process_memory = std::make_unique<harava::memory>(opts.pid);
 
 	std::vector<harava::result> results;
 	bool first_search = true;
@@ -105,24 +105,35 @@ int main(int argc, char** argv)
 				switch (result.type)
 				{
 					case harava::datatype::INT:
-						std::cout << process_memory.get_result_value<i32>(result);
+						std::cout << process_memory->get_result_value<i32>(result);
 						break;
 
 					case harava::datatype::LONG:
-						std::cout << process_memory.get_result_value<i64>(result);
+						std::cout << process_memory->get_result_value<i64>(result);
 						break;
 
 					case harava::datatype::FLOAT:
-						std::cout << process_memory.get_result_value<f32>(result);
+						std::cout << process_memory->get_result_value<f32>(result);
 						break;
 
 					case harava::datatype::DOUBLE:
-						std::cout << process_memory.get_result_value<f64>(result);
+						std::cout << process_memory->get_result_value<f64>(result);
 						break;
 				}
 
 				std::cout << '\n';
 			}
+
+			continue;
+		}
+
+		if (is_cmd("reset", 1))
+		{
+			results.clear();
+			first_search = true;
+
+			process_memory.reset();
+			process_memory = std::make_unique<harava::memory>(opts.pid);
 
 			continue;
 		}
@@ -133,7 +144,7 @@ int main(int argc, char** argv)
 			const std::string& new_value = tokens.at(2);
 
 			harava::type_bundle value(new_value);
-			process_memory.set(results.at(index), value);
+			process_memory->set(results.at(index), value);
 
 			continue;
 		}
@@ -141,7 +152,7 @@ int main(int argc, char** argv)
 		if (is_cmd("setall", 2))
 		{
 			for (harava::result& r : results)
-				process_memory.set(r, tokens.at(1));
+				process_memory->set(r, tokens.at(1));
 
 			continue;
 		}
@@ -159,11 +170,11 @@ int main(int argc, char** argv)
 				switch (comparison)
 				{
 					case '!':
-						results = process_memory.refine_search_changed(results);
+						results = process_memory->refine_search_changed(results);
 						break;
 
 					case '=':
-						results = process_memory.refine_search_unchanced(results);
+						results = process_memory->refine_search_unchanced(results);
 						break;
 
 					default:
@@ -180,7 +191,7 @@ int main(int argc, char** argv)
 		if (!first_search && is_cmd("!", 1))
 		{
 			harava::scope_timer timer("scan duration: ");
-			results = process_memory.refine_search_changed(results);
+			results = process_memory->refine_search_changed(results);
 			std::cout << "results: " << results.size() << '\n';
 			continue;
 		}
@@ -188,7 +199,7 @@ int main(int argc, char** argv)
 		if (!first_search && is_cmd("=", 1))
 		{
 			harava::scope_timer timer("scan duration: ");
-			results = process_memory.refine_search_unchanced(results);
+			results = process_memory->refine_search_unchanced(results);
 			std::cout << "results: " << results.size() << '\n';
 			continue;
 		}
@@ -200,12 +211,12 @@ int main(int argc, char** argv)
 			harava::type_bundle value(tokens[1]);
 			if (first_search)
 			{
-				results = process_memory.search(opts.memory_limit, value, tokens.at(0).at(0));
+				results = process_memory->search(opts.memory_limit, value, tokens.at(0).at(0));
 				first_search = false;
 			}
 			else
 			{
-				results = process_memory.refine_search(value, results, tokens.at(0).at(0));
+				results = process_memory->refine_search(value, results, tokens.at(0).at(0));
 			}
 
 			std::cout << "results: " << results.size() << '\n';
