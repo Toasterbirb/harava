@@ -5,6 +5,7 @@
 #include <clipp.h>
 #include <iostream>
 #include <sstream>
+#include <thread>
 
 struct options
 {
@@ -41,6 +42,8 @@ void print_help()
 
 int main(int argc, char** argv)
 {
+	using namespace std::chrono_literals;
+
 	bool show_help = false;
 	options opts;
 
@@ -137,6 +140,37 @@ int main(int argc, char** argv)
 		{
 			for (harava::result& r : results)
 				process_memory.set(r, tokens.at(1));
+
+			continue;
+		}
+
+		if (!first_search && is_cmd("repeat", 3))
+		{
+			char comparison = tokens.at(1).at(0);
+			i32 count = std::stoi(tokens.at(2));
+
+			if (count < 1)
+				count = 1;
+
+			for (i32 i = 0; i < count; ++i)
+			{
+				switch (comparison)
+				{
+					case '!':
+						results = process_memory.refine_search_changed(results);
+						break;
+
+					case '=':
+						results = process_memory.refine_search_unchanced(results);
+						break;
+
+					default:
+						break;
+				}
+
+				std::cout << "results: " << results.size() << '\n';
+				std::this_thread::sleep_for(0.5s);
+			}
 
 			continue;
 		}
