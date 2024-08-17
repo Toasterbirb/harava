@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <execution>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -188,6 +189,12 @@ namespace harava
 		{
 			std::vector<u8> bytes = read_region(mem, region.start, region.end);
 			std::vector<u8> bytes_2; // this will stay empty if opts.skip_volatile is false
+
+			if (opts.skip_null_maps && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
+			{
+				std::cout << '0' << std::flush;
+				continue;
+			}
 
 			if (opts.skip_volatile)
 			{
