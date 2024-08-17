@@ -196,7 +196,7 @@ namespace harava
 			std::vector<result> region_results;
 			region_results.reserve(10'000);
 
-			if (opts.skip_null_maps && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
+			if (opts.skip_null_regions && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
 			{
 				std::cout << '0' << std::flush;
 				return;
