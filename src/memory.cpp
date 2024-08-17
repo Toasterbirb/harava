@@ -176,7 +176,7 @@ namespace harava
 		std::cout << "found " << regions.size() << " suitable regions\n";
 	}
 
-	std::vector<result> memory::search(const options opts, const type_bundle value, const char comparison)
+	std::vector<result> memory::search(const options opts, const filter filter, const type_bundle value, const char comparison)
 	{
 		std::vector<result> results;
 		std::mutex result_mutex;
@@ -266,15 +266,17 @@ namespace harava
 					++region_result_count;
 				};
 
-				const i32 cur_value_int = interpret_bytes<i32>(bytes.data(), i, sizeof(i32));
-				const i64 cur_value_long = interpret_bytes<i64>(bytes.data(), i, sizeof(i64));
-				const f32 cur_value_float = interpret_bytes<f32>(bytes.data(), i, sizeof(f32));
-				const f64 cur_value_double = interpret_bytes<f64>(bytes.data(), i, sizeof(f64));
+				if (filter.enable_i32)
+					handle_result(value._int, interpret_bytes<i32>(bytes.data(), i, sizeof(i32)), datatype::INT);
 
-				handle_result(value._int, cur_value_int, datatype::INT);
-				handle_result(value._long, cur_value_long, datatype::LONG);
-				handle_result(value._float, cur_value_float, datatype::FLOAT);
-				handle_result(value._double, cur_value_double, datatype::DOUBLE);
+				if (filter.enable_i64)
+					handle_result(value._long, interpret_bytes<i64>(bytes.data(), i, sizeof(i64)), datatype::LONG);
+
+				if (filter.enable_f32)
+					handle_result(value._float, interpret_bytes<f32>(bytes.data(), i, sizeof(f32)), datatype::FLOAT);
+
+				if (filter.enable_f64)
+					handle_result(value._double, interpret_bytes<f64>(bytes.data(), i, sizeof(f64)), datatype::DOUBLE);
 
 				if (!cancel_search && results.size() * sizeof(result) > opts.memory_limit * gigabyte)
 				{

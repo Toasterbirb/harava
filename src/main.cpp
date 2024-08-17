@@ -1,3 +1,4 @@
+#include "Filter.hpp"
 #include "Memory.hpp"
 #include "Options.hpp"
 #include "ScopeTimer.hpp"
@@ -5,6 +6,7 @@
 
 #include <clipp.h>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <thread>
 
@@ -67,6 +69,16 @@ int main(int argc, char** argv)
 
 	std::unique_ptr<harava::memory> process_memory = std::make_unique<harava::memory>(opts.pid);
 
+	harava::filter filter;
+
+	// map strings to filter options to make arg parsing simpler (and more fun)
+	std::map<std::string, bool*> type_filter_mappings = {
+		{ "i32", &filter.enable_i32 },
+		{ "i64", &filter.enable_i64 },
+		{ "f32", &filter.enable_f32 },
+		{ "f64", &filter.enable_f64 }
+	};
+
 	std::vector<harava::result> results;
 	bool first_search = true;
 
@@ -82,15 +94,20 @@ int main(int argc, char** argv)
 
 		std::vector<std::string> tokens = tokenize_string(command, ' ');
 
-		const auto is_cmd = [&tokens, &command](const std::string& command_name, const size_t arg_count) -> bool
+		const auto is_cmd = [&tokens, &command](const std::string& command_name, const size_t arg_count = 0) -> bool
 		{
-			return command_name == tokens.at(0) && arg_count == tokens.size();
+			return command_name == tokens.at(0) && arg_count == tokens.size() - 1;
 		};
 
-		if (is_cmd("exit", 1) || is_cmd("quit", 1)) [[unlikely]]
+		const auto is_cmd_variable = [&tokens, &command](const std::string& command_name, const size_t min_arg_count) -> bool
+		{
+			return command_name == tokens.at(0) && tokens.size() - 1 >= min_arg_count;
+		};
+
+		if (is_cmd("exit") || is_cmd("quit")) [[unlikely]]
 			break;
 
-		if (is_cmd("list", 1))
+		if (is_cmd("list"))
 		{
 			u32 index{};
 			for (const harava::result& result : results)
@@ -125,7 +142,51 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (is_cmd("reset", 1))
+		if (is_cmd("list", 1))
+		{
+			// list enabled types
+			if (tokens.at(1) == "types")
+			{
+				for (const auto[type, boolean_pointer] : type_filter_mappings)
+					if (*boolean_pointer)
+						std::cout << type << '\n';
+
+				continue;
+			}
+		}
+
+		if (is_cmd_variable("types", 1))
+		{
+			// if "all" is specified as the argument, enabled all types
+			// and don't do anything else
+			if (tokens.at(1) == "all")
+			{
+				for (const auto[type, boolean_pointer] : type_filter_mappings)
+					*boolean_pointer = true;
+				continue;
+			}
+
+			// set all types to disabled state
+			for (const auto[type, boolean_pointer] : type_filter_mappings)
+				*boolean_pointer = false;
+
+			// loop over the arguments while skipping over the command
+			// and enable the mentioned types
+			for (auto it = tokens.begin() + 1; it != tokens.end(); ++it)
+			{
+				if (!type_filter_mappings.contains(*it))
+				{
+					std::cout << "invalid type: " << *it << '\n';
+					break;
+				}
+
+				*type_filter_mappings.at(*it) = true;
+			}
+
+			continue;
+		}
+
+		if (is_cmd("reset")) [[unlikely]]
 		{
 			results.clear();
 			first_search = true;
@@ -136,7 +197,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (is_cmd("set", 3))
+		if (is_cmd("set", 2))
 		{
 			i32 index = std::stoi(tokens.at(1));
 			const std::string& new_value = tokens.at(2);
@@ -147,7 +208,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (is_cmd("setall", 2))
+		if (is_cmd("setall", 1))
 		{
 			for (harava::result& r : results)
 				process_memory->set(r, tokens.at(1));
@@ -155,7 +216,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (!first_search && is_cmd("repeat", 3))
+		if (!first_search && is_cmd("repeat", 2))
 		{
 			char comparison = tokens.at(1).at(0);
 			i32 count = std::stoi(tokens.at(2));
@@ -186,7 +247,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (!first_search && is_cmd("!", 1))
+		if (!first_search && is_cmd("!"))
 		{
 			harava::scope_timer timer("scan duration: ");
 			results = process_memory->refine_search_changed(results);
@@ -194,7 +255,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (!first_search && is_cmd("=", 1))
+		if (!first_search && is_cmd("="))
 		{
 			harava::scope_timer timer("scan duration: ");
 			results = process_memory->refine_search_unchanced(results);
@@ -202,14 +263,14 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (is_cmd("=", 2) || is_cmd("<", 2) || is_cmd(">", 2))
+		if (is_cmd("=", 1) || is_cmd("<", 1) || is_cmd(">", 1))
 		{
 			harava::scope_timer timer("scan duration: ");
 
 			harava::type_bundle value(tokens[1]);
 			if (first_search)
 			{
-				results = process_memory->search(opts, value, tokens.at(0).at(0));
+				results = process_memory->search(opts, filter, value, tokens.at(0).at(0));
 				first_search = false;
 			}
 			else
@@ -222,7 +283,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if (is_cmd("help", 1))
+		if (is_cmd("help"))
 		{
 			print_help();
 			continue;
