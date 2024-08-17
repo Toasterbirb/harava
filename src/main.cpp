@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 				}
 			},
 			{
-				"=",
+				"!",
 				"",
 				"find values that have changed since last scan",
 				0,
