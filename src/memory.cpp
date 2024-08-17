@@ -207,6 +207,9 @@ namespace harava
 
 				const auto handle_result = [&](auto a, auto b, datatype type)
 				{
+					if (opts.skip_zeroes && b == 0)
+						return;
+
 					bool comparison_result = false;
 					const auto comp = [&](auto f)
 					{

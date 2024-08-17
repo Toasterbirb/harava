@@ -9,5 +9,6 @@ namespace harava
 		i32 pid{};
 		u64 memory_limit = 8; // limit in gigabytes
 		bool skip_volatile = false;
+		bool skip_zeroes = false;
 	};
 }
