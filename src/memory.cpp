@@ -193,7 +193,7 @@ namespace harava
 			{
 				std::this_thread::sleep_for(0.1s);
 				bytes_2 = read_region(mem, region.start, region.end);
-				assert(bytes.size() == bytes_2.sizy());
+				assert(bytes.size() == bytes_2.size());
 			}
 
 			// go through the bytes one by one
