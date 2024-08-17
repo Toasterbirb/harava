@@ -10,6 +10,7 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unordered_map>
 
 constexpr u64 gigabyte = 1'000'000'000;
@@ -174,16 +175,26 @@ namespace harava
 		std::cout << "found " << regions.size() << " suitable regions\n";
 	}
 
-	std::vector<result> memory::search(const u64 memory_limit, const type_bundle value, const char comparison)
+	std::vector<result> memory::search(const options opts, const type_bundle value, const char comparison)
 	{
 		std::vector<result> results;
 		results.reserve(100'000);
 
 		std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
 
+		using namespace std::chrono_literals;
+
 		for (memory_region& region : regions)
 		{
 			std::vector<u8> bytes = read_region(mem, region.start, region.end);
+			std::vector<u8> bytes_2; // this will stay empty if opts.skip_volatile is false
+
+			if (opts.skip_volatile)
+			{
+				std::this_thread::sleep_for(0.1s);
+				bytes_2 = read_region(mem, region.start, region.end);
+				assert(bytes.size() == bytes_2.sizy());
+			}
 
 			// go through the bytes one by one
 
@@ -191,6 +202,9 @@ namespace harava
 
 			for (size_t i = 0; i < bytes.size() - sizeof(double); ++i)
 			{
+				if (opts.skip_volatile && !std::equal(bytes.begin() + i, bytes.begin() + i + sizeof(double), bytes_2.begin() + i))
+					continue;
+
 				const auto handle_result = [&](auto a, auto b, datatype type)
 				{
 					bool comparison_result = false;
@@ -245,9 +259,9 @@ namespace harava
 				handle_result(value._float, cur_value_float, datatype::FLOAT);
 				handle_result(value._double, cur_value_double, datatype::DOUBLE);
 
-				if (results.size() * sizeof(result) > memory_limit * gigabyte)
+				if (results.size() * sizeof(result) > opts.memory_limit * gigabyte)
 				{
-					std::cout << "\nmemory limit of " << memory_limit << "GB has been reached\n"
+					std::cout << "\nmemory limit of " << opts.memory_limit << "GB has been reached\n"
 						<< "stopping the search\n";
 					goto abort_search;
 				}
