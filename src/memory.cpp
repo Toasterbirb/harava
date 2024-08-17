@@ -179,21 +179,27 @@ namespace harava
 	std::vector<result> memory::search(const options opts, const type_bundle value, const char comparison)
 	{
 		std::vector<result> results;
-		results.reserve(100'000);
-
-		std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
+		std::mutex result_mutex;
+		results.reserve(200'000);
+		bool cancel_search = false;
 
 		using namespace std::chrono_literals;
 
-		for (memory_region& region : regions)
+		std::for_each(std::execution::par_unseq, regions.begin(), regions.end(), [&](memory_region& region)
 		{
+			if (cancel_search)
+				return;
+
+			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
 			std::vector<u8> bytes = read_region(mem, region.start, region.end);
 			std::vector<u8> bytes_2; // this will stay empty if opts.skip_volatile is false
+			std::vector<result> region_results;
+			region_results.reserve(10'000);
 
 			if (opts.skip_null_maps && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
 			{
 				std::cout << '0' << std::flush;
-				continue;
+				return;
 			}
 
 			if (opts.skip_volatile)
@@ -207,7 +213,7 @@ namespace harava
 
 			u64 region_result_count{};
 
-			for (size_t i = 0; i < bytes.size() - sizeof(double); ++i)
+			for (size_t i = 0; i < bytes.size() - sizeof(double) && !cancel_search; ++i)
 			{
 				if (opts.skip_volatile && !std::equal(bytes.begin() + i, bytes.begin() + i + sizeof(double), bytes_2.begin() + i))
 					continue;
@@ -255,7 +261,8 @@ namespace harava
 					r.location = i;
 					r.region_id = region.id;
 					r.type = type;
-					results.emplace_back(r);
+
+					region_results.emplace_back(r);
 					++region_result_count;
 				};
 
@@ -269,21 +276,23 @@ namespace harava
 				handle_result(value._float, cur_value_float, datatype::FLOAT);
 				handle_result(value._double, cur_value_double, datatype::DOUBLE);
 
-				if (results.size() * sizeof(result) > opts.memory_limit * gigabyte)
+				if (!cancel_search && results.size() * sizeof(result) > opts.memory_limit * gigabyte)
 				{
+					std::scoped_lock mem_lock;
 					std::cout << "\nmemory limit of " << opts.memory_limit << "GB has been reached\n"
 						<< "stopping the search\n";
-					goto abort_search;
+					cancel_search = true;
 				}
 			}
 
 			if (region_result_count == 0)
 				region.ignore = true;
 
-			std::cout << '.' << std::flush;
-		}
+			std::lock_guard<std::mutex> guard(result_mutex);
+			results.insert(results.end(), region_results.begin(), region_results.end());
 
-	abort_search:
+			std::cout << '.' << std::flush;
+		});
 
 		std::cout << '\n';
 
