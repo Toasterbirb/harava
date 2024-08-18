@@ -433,7 +433,7 @@ int main(int argc, char** argv)
 		}
 
 		// execute the command
-		std::get<4>(*command_to_run)();
+		std::get<std::function<void()>>(*command_to_run)();
 	}
 
 	return 0;
