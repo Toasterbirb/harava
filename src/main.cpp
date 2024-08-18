@@ -275,6 +275,9 @@ int main(int argc, char** argv)
 					if (count < 1)
 						count = 1;
 
+					size_t previous_result_count{results.size()};
+					u8 same_result_streak{0};
+
 					for (i32 i = 0; i < count; ++i)
 					{
 						harava::scope_timer timer("scan duration: ");
@@ -294,10 +297,19 @@ int main(int argc, char** argv)
 								return;
 						}
 
-						std::cout << "results: " << results.size() << '\n';
+						if (results.size() == previous_result_count)
+							++same_result_streak;
+						else
+							same_result_streak = 0;
 
-						if (i < count - 1)
-							std::this_thread::sleep_for(0.5s);
+						std::cout << "results: " << results.size() << '\n';
+						previous_result_count = results.size();
+
+						if (same_result_streak >= 3)
+						{
+							std::cout << "stopping the repeat check as it doesn't seem to help\n";
+							break;
+						}
 					}
 				}
 			},
