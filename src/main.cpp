@@ -376,6 +376,16 @@ int main(int argc, char** argv)
 						return;
 					}
 
+					// validate the types
+					for (auto it = tokens.begin() + 1; it != tokens.end(); ++it)
+					{
+						if (!type_filter_mappings.contains(*it))
+						{
+							std::cout << "invalid type: " << *it << '\n';
+							return;
+						}
+					}
+
 					// set all types to disabled state
 					for (const auto[type, boolean_pointer] : type_filter_mappings)
 						*boolean_pointer = false;
@@ -383,15 +393,7 @@ int main(int argc, char** argv)
 					// loop over the arguments while skipping over the command
 					// and enable the mentioned types
 					for (auto it = tokens.begin() + 1; it != tokens.end(); ++it)
-					{
-						if (!type_filter_mappings.contains(*it))
-						{
-							std::cout << "invalid type: " << *it << '\n';
-							break;
-						}
-
 						*type_filter_mappings.at(*it) = true;
-					}
 				}
 			},
 			{
