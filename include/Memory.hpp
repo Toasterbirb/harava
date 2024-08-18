@@ -49,8 +49,8 @@ namespace harava
 		ge  // greater than or equal to
 	};
 
+	__attribute__((hot))
 	u8 datatype_to_size();
-
 
 	struct result
 	{
@@ -60,6 +60,8 @@ namespace harava
 		datatype type;
 
 		void print_info() const;
+
+		__attribute__((hot))
 		bool compare_bytes(const std::vector<u8>& bytes) const;
 	};
 
@@ -67,9 +69,16 @@ namespace harava
 	{
 	public:
 		memory(const i32 pid);
+
+		__attribute__((warn_unused_result))
 		std::vector<result> search(const options opts, const filter filter, const type_bundle value, const comparison comparison);
+
+		__attribute__((warn_unused_result))
 		std::vector<result> refine_search(const type_bundle new_value, const std::vector<result>& old_results, const comparison comparison);
+
+		__attribute__((warn_unused_result))
 		std::vector<result> refine_search_change(const std::vector<result>& old_results, const bool expected_result);
+
 		void set(result& result, const type_bundle value);
 		u64 region_count() const;
 

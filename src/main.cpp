@@ -441,7 +441,7 @@ int main(int argc, char** argv)
 		auto command_to_run = std::find_if(std::execution::par_unseq, commands.begin(), commands.end(), [&command](const auto& cmd)
 				{
 					// commands with variable argument count
-					if (std::get<3>(cmd) == -1 && !command.args.empty() && std::get<0>(cmd) == command.cmd)
+					if (std::get<3>(cmd) == -1 && !command.args.empty() && std::get<0>(cmd) == command.cmd) [[unlikely]]
 						return true;
 
 					return std::get<0>(cmd) == command.cmd && std::get<3>(cmd) == command.args.size();
