@@ -332,12 +332,6 @@ namespace harava
 
 				memcpy(result.value, v.bytes, max_type_size);
 
-				const auto comp = [&](auto f)
-				{
-					if (f(new_value, v.type))
-						new_results.push_back(result);
-				};
-
 				bool comparison_result = false;
 
 				switch (comparison)
