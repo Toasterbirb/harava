@@ -75,6 +75,8 @@ int main(int argc, char** argv)
 	const std::string do_initial_search_notif_str = "do an initial scan first";
 	const auto print_result_count = [&results]() { std::cout << "results: " << results.size() << '\n'; };
 
+	std::cout << "type 'help' for a list of commands\n";
+
 	while (running)
 	{
 		std::cout << " > ";
