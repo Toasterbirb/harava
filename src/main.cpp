@@ -269,7 +269,17 @@ int main(int argc, char** argv)
 					}
 
 					char comparison = command.args.at(0).at(0);
-					i32 count = std::stoi(command.args.at(1));
+					i32 count{0};
+
+					try
+					{
+						count = std::stoi(command.args.at(1));
+					}
+					catch (const std::exception& e)
+					{
+						std::cout << "invalid argument: " << command.args.at(1) << '\n';
+						return;
+					}
 
 					if (count < 1)
 						count = 1;
@@ -356,7 +366,18 @@ int main(int argc, char** argv)
 				2,
 				[&command, &results, &process_memory]()
 				{
-					i32 index = std::stoi(command.args.at(0));
+					i32 index{0};
+
+					try
+					{
+						index = std::stoi(command.args.at(0));
+					}
+					catch (const std::exception& e)
+					{
+						std::cout << "invalid argument: " << command.args.at(0) << '\n';
+						return;
+					}
+
 					const std::string& new_value = command.args.at(1);
 
 					harava::type_bundle value(new_value);
