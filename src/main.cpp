@@ -216,7 +216,7 @@ int main(int argc, char** argv)
 				0,
 				[&]
 				{
-					if (!first_search)
+					if (first_search)
 					{
 						std::cout << do_initial_search_notif_str << '\n';
 						return;
@@ -234,7 +234,7 @@ int main(int argc, char** argv)
 				0,
 				[&]
 				{
-					if (!first_search)
+					if (first_search)
 					{
 						std::cout << do_initial_search_notif_str << '\n';
 						return;
@@ -252,7 +252,7 @@ int main(int argc, char** argv)
 				2,
 				[&]
 				{
-					if (!first_search)
+					if (first_search)
 					{
 						std::cout << do_initial_search_notif_str << '\n';
 						return;
