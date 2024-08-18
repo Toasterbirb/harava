@@ -26,6 +26,19 @@ std::vector<std::string> tokenize_string(const std::string& line, const char sep
 	return tokens;
 }
 
+struct command
+{
+	command(const std::string& cmd_line)
+	{
+		const std::vector<std::string> tokens = tokenize_string(cmd_line, ' ');
+		cmd = *tokens.begin();
+		args.insert(args.begin(), tokens.begin() + 1, tokens.end());
+	}
+
+	std::string cmd;
+	std::vector<std::string> args;
+};
+
 int main(int argc, char** argv)
 {
 	using namespace std::chrono_literals;
@@ -85,9 +98,7 @@ int main(int argc, char** argv)
 
 		char buffer[max_command_size];
 		std::cin.getline(buffer, max_command_size, '\n');
-		std::string command = buffer;
-
-		std::vector<std::string> tokens = tokenize_string(command, ' ');
+		command command(buffer);
 
 		// command format: <comand name, argument description, command description, argument count, function to run>
 		const static std::vector<std::tuple<std::string, std::string, std::string, i8, std::function<void()>>> commands = {
@@ -127,7 +138,7 @@ int main(int argc, char** argv)
 				[&]()
 				{
 					harava::scope_timer timer(scan_duration_str);
-					harava::type_bundle value(tokens.at(1));
+					harava::type_bundle value(command.args.at(0));
 
 					results = first_search
 						? process_memory->search(opts, filter, value, harava::comparison::eq)
@@ -145,7 +156,7 @@ int main(int argc, char** argv)
 				[&]()
 				{
 					harava::scope_timer timer(scan_duration_str);
-					harava::type_bundle value(tokens.at(1));
+					harava::type_bundle value(command.args.at(0));
 
 					results = first_search
 						? process_memory->search(opts, filter, value, harava::comparison::gt)
@@ -163,7 +174,7 @@ int main(int argc, char** argv)
 				[&]()
 				{
 					harava::scope_timer timer(scan_duration_str);
-					harava::type_bundle value(tokens.at(1));
+					harava::type_bundle value(command.args.at(0));
 
 					results = first_search
 						? process_memory->search(opts, filter, value, harava::comparison::lt)
@@ -181,7 +192,7 @@ int main(int argc, char** argv)
 				[&]()
 				{
 					harava::scope_timer timer(scan_duration_str);
-					harava::type_bundle value(tokens.at(1));
+					harava::type_bundle value(command.args.at(0));
 
 					results = first_search
 						? process_memory->search(opts, filter, value, harava::comparison::ge)
@@ -199,7 +210,7 @@ int main(int argc, char** argv)
 				[&]()
 				{
 					harava::scope_timer timer(scan_duration_str);
-					harava::type_bundle value(tokens.at(1));
+					harava::type_bundle value(command.args.at(0));
 
 					results = first_search
 						? process_memory->search(opts, filter, value, harava::comparison::le)
@@ -258,8 +269,8 @@ int main(int argc, char** argv)
 						return;
 					}
 
-					char comparison = tokens.at(1).at(0);
-					i32 count = std::stoi(tokens.at(2));
+					char comparison = command.args.at(0).at(0);
+					i32 count = std::stoi(command.args.at(1));
 
 					if (count < 1)
 						count = 1;
@@ -332,10 +343,10 @@ int main(int argc, char** argv)
 				"[index] [value]",
 				"set a new value for a result",
 				2,
-				[&tokens, &results, &process_memory]()
+				[&command, &results, &process_memory]()
 				{
-					i32 index = std::stoi(tokens.at(1));
-					const std::string& new_value = tokens.at(2);
+					i32 index = std::stoi(command.args.at(0));
+					const std::string& new_value = command.args.at(1);
 
 					harava::type_bundle value(new_value);
 					process_memory->set(results.at(index), value);
@@ -346,10 +357,10 @@ int main(int argc, char** argv)
 				"[value]",
 				"set a new value for all results",
 				1,
-				[&tokens, &results, &process_memory]
+				[&command, &results, &process_memory]
 				{
 					for (harava::result& r : results)
-						process_memory->set(r, tokens.at(1));
+						process_memory->set(r, command.args.at(0));
 				}
 			},
 			{
@@ -369,11 +380,11 @@ int main(int argc, char** argv)
 				"[i32|i64|f32|f64 ...]",
 				"specify the types that should be searched for",
 				-1,
-				[&tokens, &type_filter_mappings]
+				[&command, &type_filter_mappings]
 				{
 					// if "all" is specified as the argument, enabled all types
 					// and don't do anything else
-					if (tokens.at(1) == "all")
+					if (command.args.at(0) == "all")
 					{
 						for (const auto[type, boolean_pointer] : type_filter_mappings)
 							*boolean_pointer = true;
@@ -381,7 +392,7 @@ int main(int argc, char** argv)
 					}
 
 					// validate the types
-					for (auto it = tokens.begin() + 1; it != tokens.end(); ++it)
+					for (auto it = command.args.begin(); it != command.args.end(); ++it)
 					{
 						if (!type_filter_mappings.contains(*it))
 						{
@@ -394,9 +405,8 @@ int main(int argc, char** argv)
 					for (const auto[type, boolean_pointer] : type_filter_mappings)
 						*boolean_pointer = false;
 
-					// loop over the arguments while skipping over the command
-					// and enable the mentioned types
-					for (auto it = tokens.begin() + 1; it != tokens.end(); ++it)
+					// loop over the arguments and enable the mentioned types
+					for (auto it = command.args.begin(); it != command.args.end(); ++it)
 						*type_filter_mappings.at(*it) = true;
 				}
 			},
@@ -416,13 +426,13 @@ int main(int argc, char** argv)
 			}
 		};
 
-		auto command_to_run = std::find_if(std::execution::par_unseq, commands.begin(), commands.end(), [&tokens](const auto& cmd)
+		auto command_to_run = std::find_if(std::execution::par_unseq, commands.begin(), commands.end(), [&command](const auto& cmd)
 				{
 					// commands with variable argument count
-					if (std::get<3>(cmd) == -1 && tokens.size() > 1 && std::get<0>(cmd) == tokens.at(0))
+					if (std::get<3>(cmd) == -1 && !command.args.empty() && std::get<0>(cmd) == command.cmd)
 						return true;
 
-					return std::get<0>(cmd) == tokens.at(0) && std::get<3>(cmd) == tokens.size() - 1;
+					return std::get<0>(cmd) == command.cmd && std::get<3>(cmd) == command.args.size();
 				});
 
 
