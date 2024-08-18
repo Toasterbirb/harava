@@ -185,7 +185,7 @@ namespace harava
 		std::cout << "found " << regions.size() << " suitable regions\n";
 	}
 
-	std::vector<result> memory::search(const options opts, const filter filter, const type_bundle value, const char comparison)
+	std::vector<result> memory::search(const options opts, const filter filter, const type_bundle value, const comparison comparison)
 	{
 		std::vector<result> results;
 		std::mutex result_mutex;
@@ -233,28 +233,28 @@ namespace harava
 						return;
 
 					bool comparison_result = false;
-					const auto comp = [&](auto f)
-					{
-						comparison_result = f(a, b);
-					};
 
 					switch (comparison)
 					{
-						case '=':
-							comp(comparison_func_equal);
+						case comparison::eq:
+							comparison_result = a == b;
 							break;
 
-						case '<':
-							comp(comparison_func_less_than);
+						case comparison::lt:
+							comparison_result = a > b;
 							break;
 
-						case '>':
-							comp(comparison_func_more_than);
+						case comparison::le:
+							comparison_result = a >= b;
 							break;
 
-						default:
-							std::cout << "invalid comparison\n";
-							return;
+						case comparison::gt:
+							comparison_result = a < b;
+							break;
+
+						case comparison::ge:
+							comparison_result = a <= b;
+							break;
 					}
 
 					if (!comparison_result)
@@ -338,24 +338,33 @@ namespace harava
 						new_results.push_back(result);
 				};
 
+				bool comparison_result = false;
+
 				switch (comparison)
 				{
 					case comparison::eq:
-						comp(comparison_func_equal);
+						comparison_result = new_value == v.type;
 						break;
 
 					case comparison::lt:
-						comp(comparison_func_less_than);
+						comparison_result = new_value > v.type;
+						break;
+
+					case comparison::le:
+						comparison_result = new_value >= v.type;
 						break;
 
 					case comparison::gt:
-						comp(comparison_func_more_than);
+						comparison_result = new_value < v.type;
 						break;
 
-					default:
-						std::cout << "invalid comparison\n";
-						return;
+					case comparison::ge:
+						comparison_result = new_value <= v.type;
+						break;
 				}
+
+				if (comparison_result)
+					new_results.emplace_back(result);
 			};
 
 			switch (result.type)

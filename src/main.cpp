@@ -130,7 +130,7 @@ int main(int argc, char** argv)
 					harava::type_bundle value(tokens.at(1));
 
 					results = first_search
-						? process_memory->search(opts, filter, value, '=')
+						? process_memory->search(opts, filter, value, harava::comparison::eq)
 						: process_memory->refine_search(value, results, harava::comparison::eq);
 
 					first_search = false;
@@ -148,8 +148,26 @@ int main(int argc, char** argv)
 					harava::type_bundle value(tokens.at(1));
 
 					results = first_search
-						? process_memory->search(opts, filter, value, '>')
+						? process_memory->search(opts, filter, value, harava::comparison::gt)
 						: process_memory->refine_search(value, results, harava::comparison::gt);
+
+					first_search = false;
+					print_result_count();
+				}
+			},
+			{
+				">=",
+				"[value]",
+				"find values higher than or equal to the given value",
+				1,
+				[&]()
+				{
+					harava::scope_timer timer(scan_duration_str);
+					harava::type_bundle value(tokens.at(1));
+
+					results = first_search
+						? process_memory->search(opts, filter, value, harava::comparison::ge)
+						: process_memory->refine_search(value, results, harava::comparison::ge);
 
 					first_search = false;
 					print_result_count();
@@ -166,8 +184,26 @@ int main(int argc, char** argv)
 					harava::type_bundle value(tokens.at(1));
 
 					results = first_search
-						? process_memory->search(opts, filter, value, '<')
+						? process_memory->search(opts, filter, value, harava::comparison::lt)
 						: process_memory->refine_search(value, results, harava::comparison::lt);
+
+					first_search = false;
+					print_result_count();
+				}
+			},
+			{
+				"<=",
+				"[value]",
+				"find values lower than or equal to the given value",
+				1,
+				[&]()
+				{
+					harava::scope_timer timer(scan_duration_str);
+					harava::type_bundle value(tokens.at(1));
+
+					results = first_search
+						? process_memory->search(opts, filter, value, harava::comparison::le)
+						: process_memory->refine_search(value, results, harava::comparison::le);
 
 					first_search = false;
 					print_result_count();
