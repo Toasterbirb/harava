@@ -11,7 +11,6 @@
 #include <iostream>
 #include <map>
 #include <sstream>
-#include <thread>
 
 std::vector<std::string> tokenize_string(const std::string& line, const char separator)
 {
