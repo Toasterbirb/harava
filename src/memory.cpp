@@ -390,30 +390,18 @@ namespace harava
 		return new_results;
 	}
 
-	std::vector<result> memory::refine_search_changed(const std::vector<result>& old_results)
+	std::vector<result> memory::refine_search_change(const std::vector<result>& old_results, const bool expected_result)
 	{
+		// expected_result == true (value unchanged)
+		// expected_result == false (value changed)
+
 		std::unordered_map<u16, region_snapshot> region_cache = snapshot_regions(old_results);
 		std::vector<result> new_results;
 
 		for (result result : old_results)
 		{
 			const region_snapshot& snapshot = region_cache.at(result.region_id);
-			if (!result.compare_bytes(snapshot.bytes))
-				new_results.push_back(result);
-		}
-
-		return new_results;
-	}
-
-	std::vector<result> memory::refine_search_unchanced(const std::vector<result>& old_results)
-	{
-		std::unordered_map<u16, region_snapshot> region_cache = snapshot_regions(old_results);
-		std::vector<result> new_results;
-
-		for (result result : old_results)
-		{
-			const region_snapshot& snapshot = region_cache.at(result.region_id);
-			if (result.compare_bytes(snapshot.bytes))
+			if (result.compare_bytes(snapshot.bytes) == expected_result)
 				new_results.push_back(result);
 		}
 

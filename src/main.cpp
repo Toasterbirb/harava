@@ -223,7 +223,7 @@ int main(int argc, char** argv)
 					}
 
 					harava::scope_timer timer("scan duration: ");
-					results = process_memory->refine_search_unchanced(results);
+					results = process_memory->refine_search_change(results, true);
 					print_result_count();
 				}
 			},
@@ -241,7 +241,7 @@ int main(int argc, char** argv)
 					}
 
 					harava::scope_timer timer("scan duration: ");
-					results = process_memory->refine_search_changed(results);
+					results = process_memory->refine_search_change(results, false);
 					print_result_count();
 				}
 			},
@@ -266,14 +266,16 @@ int main(int argc, char** argv)
 
 					for (i32 i = 0; i < count; ++i)
 					{
+						harava::scope_timer timer("scan duration: ");
+
 						switch (comparison)
 						{
 							case '!':
-								results = process_memory->refine_search_changed(results);
+								results = process_memory->refine_search_change(results, false);
 								break;
 
 							case '=':
-								results = process_memory->refine_search_unchanced(results);
+								results = process_memory->refine_search_change(results, true);
 								break;
 
 							default:
