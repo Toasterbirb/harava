@@ -131,7 +131,7 @@ int main(int argc, char** argv)
 
 					results = first_search
 						? process_memory->search(opts, filter, value, '=')
-						: process_memory->refine_search(value, results, '=');
+						: process_memory->refine_search(value, results, harava::comparison::eq);
 
 					first_search = false;
 					print_result_count();
@@ -149,7 +149,7 @@ int main(int argc, char** argv)
 
 					results = first_search
 						? process_memory->search(opts, filter, value, '>')
-						: process_memory->refine_search(value, results, '>');
+						: process_memory->refine_search(value, results, harava::comparison::gt);
 
 					first_search = false;
 					print_result_count();
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
 
 					results = first_search
 						? process_memory->search(opts, filter, value, '<')
-						: process_memory->refine_search(value, results, '<');
+						: process_memory->refine_search(value, results, harava::comparison::lt);
 
 					first_search = false;
 					print_result_count();

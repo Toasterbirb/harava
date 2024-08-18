@@ -310,7 +310,7 @@ namespace harava
 		return results;
 	}
 
-	std::vector<result> memory::refine_search(const type_bundle new_value, const std::vector<result>& old_results, const char comparison)
+	std::vector<result> memory::refine_search(const type_bundle new_value, const std::vector<result>& old_results, const comparison comparison)
 	{
 		std::vector<result> new_results;
 		new_results.reserve(old_results.size() / 4);
@@ -340,15 +340,15 @@ namespace harava
 
 				switch (comparison)
 				{
-					case '=':
+					case comparison::eq:
 						comp(comparison_func_equal);
 						break;
 
-					case '<':
+					case comparison::lt:
 						comp(comparison_func_less_than);
 						break;
 
-					case '>':
+					case comparison::gt:
 						comp(comparison_func_more_than);
 						break;
 
