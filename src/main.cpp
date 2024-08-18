@@ -284,6 +284,8 @@ int main(int argc, char** argv)
 						}
 
 						std::cout << "results: " << results.size() << '\n';
+
+						if (i < count - 1)
 						std::this_thread::sleep_for(0.5s);
 					}
 				}
