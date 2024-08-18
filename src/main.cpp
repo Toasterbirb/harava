@@ -156,24 +156,6 @@ int main(int argc, char** argv)
 				}
 			},
 			{
-				">=",
-				"[value]",
-				"find values higher than or equal to the given value",
-				1,
-				[&]()
-				{
-					harava::scope_timer timer(scan_duration_str);
-					harava::type_bundle value(tokens.at(1));
-
-					results = first_search
-						? process_memory->search(opts, filter, value, harava::comparison::ge)
-						: process_memory->refine_search(value, results, harava::comparison::ge);
-
-					first_search = false;
-					print_result_count();
-				}
-			},
-			{
 				"<",
 				"[value]",
 				"find values lower than the given value",
@@ -186,6 +168,24 @@ int main(int argc, char** argv)
 					results = first_search
 						? process_memory->search(opts, filter, value, harava::comparison::lt)
 						: process_memory->refine_search(value, results, harava::comparison::lt);
+
+					first_search = false;
+					print_result_count();
+				}
+			},
+			{
+				">=",
+				"[value]",
+				"find values higher than or equal to the given value",
+				1,
+				[&]()
+				{
+					harava::scope_timer timer(scan_duration_str);
+					harava::type_bundle value(tokens.at(1));
+
+					results = first_search
+						? process_memory->search(opts, filter, value, harava::comparison::ge)
+						: process_memory->refine_search(value, results, harava::comparison::ge);
 
 					first_search = false;
 					print_result_count();
