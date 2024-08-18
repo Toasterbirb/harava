@@ -311,7 +311,7 @@ int main(int argc, char** argv)
 						else
 							same_result_streak = 0;
 
-						std::cout << "results: " << results.size() << '\n';
+						print_result_count();
 						previous_result_count = results.size();
 
 						if (same_result_streak >= 3)
