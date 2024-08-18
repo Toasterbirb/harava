@@ -124,6 +124,12 @@ namespace harava
 		const std::string maps_path = proc_path + "/maps";
 		std::ifstream maps(maps_path);
 
+		if (!maps.is_open())
+		{
+			std::cout << "can't open " << maps_path << '\n';
+			exit(1);
+		}
+
 		const std::regex lib_regex("^.*\\.so$");
 		const std::regex lib_versioned_regex("^.*\\.so\\.[.0-9]*$");
 
@@ -171,7 +177,10 @@ namespace harava
 		}
 
 		if (regions.empty())
-			throw "no suitable memory regions could be found";
+		{
+			std::cout << "no suitable memory regions could be found\n";
+			exit(1);
+		}
 
 		std::cout << "found " << regions.size() << " suitable regions\n";
 	}
@@ -408,7 +417,10 @@ namespace harava
 
 		std::fstream mem(mem_path, std::ios::out | std::ios::binary);
 		if (!mem.is_open()) [[unlikely]]
-			throw "can't open " + mem_path;
+		{
+			std::cout << "can't open " << mem_path << '\n';
+			return;
+		}
 
 		mem.seekg(result.location + get_region(result.region_id).start, std::ios::beg);
 
@@ -467,7 +479,8 @@ namespace harava
 			if (region.id == id)
 				return region;
 
-		throw "no region could be found with the given id";
+		std::cout << "no region could be found with the given id: " << id;
+		exit(1);
 	}
 
 	std::vector<u8> memory::read_region(std::ifstream& file, const size_t start, const size_t end)
@@ -489,7 +502,10 @@ namespace harava
 		{
 			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
 			if (!mem.is_open()) [[unlikely]]
-				throw "can't open " + mem_path;
+			{
+				std::cout << "can't open " << mem_path << '\n';
+				exit(1);
+			}
 
 			for (result result : results)
 			{

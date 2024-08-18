@@ -5,6 +5,7 @@
 #include "Types.hpp"
 
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -69,7 +70,10 @@ namespace harava
 		{
 			std::fstream mem(mem_path, std::ios::in | std::ios::binary);
 			if (!mem.is_open())
-				throw "can't open " + mem_path;
+			{
+				std::cout << "can't open " << mem_path;
+				exit(1);
+			}
 
 			mem.seekg(result.location + get_region(result.region_id).start, std::ios::beg);
 
