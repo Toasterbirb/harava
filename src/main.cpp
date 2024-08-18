@@ -281,7 +281,7 @@ int main(int argc, char** argv)
 						return;
 					}
 
-				if (count < 1)
+					if (count < 1)
 						count = 1;
 
 					size_t previous_result_count{results.size()};
