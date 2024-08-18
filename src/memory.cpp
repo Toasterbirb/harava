@@ -397,6 +397,7 @@ namespace harava
 
 		std::unordered_map<u16, region_snapshot> region_cache = snapshot_regions(old_results);
 		std::vector<result> new_results;
+		new_results.reserve(old_results.size());
 
 		for (result result : old_results)
 		{
