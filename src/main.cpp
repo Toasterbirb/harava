@@ -281,7 +281,7 @@ int main(int argc, char** argv)
 						return;
 					}
 
-					if (count < 1)
+				if (count < 1)
 						count = 1;
 
 					size_t previous_result_count{results.size()};
@@ -319,6 +319,46 @@ int main(int argc, char** argv)
 							std::cout << "stopping the repeat check as it doesn't seem to help\n";
 							break;
 						}
+					}
+				}
+			},
+			{
+				"repeat",
+				"[!|=]",
+				"repeat a comparison until the result count stops changing",
+				1,
+				[&]
+				{
+					if (first_search)
+					{
+						std::cout << do_initial_search_notif_str << '\n';
+						return;
+					}
+
+					char comparison = command.args.at(0).at(0);
+					size_t previous_result_count{0};
+
+					while (previous_result_count != results.size())
+					{
+						harava::scope_timer timer(scan_duration_str);
+						previous_result_count = results.size();
+
+						switch (comparison)
+						{
+							case '!':
+								results = process_memory->refine_search_change(results, false);
+								break;
+
+							case '=':
+								results = process_memory->refine_search_change(results, true);
+								break;
+
+							default:
+								std::cout << "unimplemented repeat comparison\n";
+								return;
+						}
+
+						print_result_count();
 					}
 				}
 			},
