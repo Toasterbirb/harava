@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 				"",
 				"show help",
 				0,
-				[&]()
+				[&]
 				{
 					std::cout << std::left;
 					for (const auto&[cmd_name, arg_desc, cmd_desc, arg_count, func] : commands)
@@ -127,14 +127,14 @@ int main(int argc, char** argv)
 				"",
 				"quit the program",
 				0,
-				[&]() { running = false; }
+				[&] { running = false; }
 			},
 			{
 				"=",
 				"[value]",
 				"find matching values",
 				1,
-				[&]()
+				[&]
 				{
 					harava::scope_timer timer(scan_duration_str);
 					harava::type_bundle value(command.args.at(0));
@@ -152,7 +152,7 @@ int main(int argc, char** argv)
 				"[value]",
 				"find values higher than the given value",
 				1,
-				[&]()
+				[&]
 				{
 					harava::scope_timer timer(scan_duration_str);
 					harava::type_bundle value(command.args.at(0));
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
 				"[value]",
 				"find values lower than the given value",
 				1,
-				[&]()
+				[&]
 				{
 					harava::scope_timer timer(scan_duration_str);
 					harava::type_bundle value(command.args.at(0));
@@ -188,7 +188,7 @@ int main(int argc, char** argv)
 				"[value]",
 				"find values higher than or equal to the given value",
 				1,
-				[&]()
+				[&]
 				{
 					harava::scope_timer timer(scan_duration_str);
 					harava::type_bundle value(command.args.at(0));
@@ -206,7 +206,7 @@ int main(int argc, char** argv)
 				"[value]",
 				"find values lower than or equal to the given value",
 				1,
-				[&]()
+				[&]
 				{
 					harava::scope_timer timer(scan_duration_str);
 					harava::type_bundle value(command.args.at(0));
@@ -327,7 +327,7 @@ int main(int argc, char** argv)
 				"",
 				"list out all results found so far",
 				0,
-				[&results, &process_memory]()
+				[&results, &process_memory]
 				{
 					for (size_t i = 0; i < results.size(); ++i)
 					{
@@ -364,7 +364,7 @@ int main(int argc, char** argv)
 				"[index] [value]",
 				"set a new value for a result",
 				2,
-				[&command, &results, &process_memory]()
+				[&command, &results, &process_memory]
 				{
 					i32 index{0};
 
@@ -400,7 +400,7 @@ int main(int argc, char** argv)
 				"",
 				"list currently enabled types",
 				0,
-				[type_filter_mappings]()
+				[type_filter_mappings]
 				{
 					for (const auto[type, boolean_pointer] : type_filter_mappings)
 						if (*boolean_pointer)
