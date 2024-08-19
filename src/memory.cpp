@@ -191,8 +191,6 @@ namespace harava
 			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
 			std::vector<u8> bytes = read_region(mem, region.start, region.end);
 			std::vector<u8> bytes_2; // this will stay empty if opts.skip_volatile is false
-			std::vector<result> region_results;
-			region_results.reserve(10'000);
 
 			if (opts.skip_null_regions && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
 			{
@@ -208,6 +206,9 @@ namespace harava
 			}
 
 			// go through the bytes one by one
+
+			std::vector<result> region_results;
+			region_results.reserve(10'000);
 
 			for (size_t i = 0; i < bytes.size() - sizeof(double) && !cancel_search; ++i)
 			{
