@@ -209,8 +209,6 @@ namespace harava
 
 			// go through the bytes one by one
 
-			u64 region_result_count{};
-
 			for (size_t i = 0; i < bytes.size() - sizeof(double) && !cancel_search; ++i)
 			{
 				if (opts.skip_volatile && !std::equal(bytes.begin() + i, bytes.begin() + i + sizeof(double), bytes_2.begin() + i))
@@ -261,7 +259,6 @@ namespace harava
 					r.type = type;
 
 					region_results.emplace_back(r);
-					++region_result_count;
 				};
 
 				if (filter.enable_i32)
