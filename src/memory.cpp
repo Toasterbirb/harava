@@ -35,16 +35,13 @@ namespace harava
 
 	static u16 memory_region_count = 0;
 
-	memory_region::memory_region(const std::string& range_str, const bool is_stack)
-	:is_stack(is_stack)
+	memory_region::memory_region(const std::string& range_str)
 	{
 		size_t line_pos = range_str.find('-');
 
 		std::stringstream hex_ss;
 		hex_ss << std::hex << range_str.substr(0, line_pos) << " " << range_str.substr(line_pos + 1, range_str.size() - line_pos - 1);
 		hex_ss >> start >> end;
-
-		id = memory_region_count++;
 	}
 
 	type_bundle::type_bundle(const std::string& value)
@@ -162,18 +159,8 @@ namespace harava
 			if (std::regex_match(file_path, lib_regex) || std::regex_match(file_path, lib_versioned_regex))
 				continue;
 
-			regions.emplace_back(range, file_path == "[stack]");
-		}
-
-		// prioritise stack in-case the process runs out of memory
-		// and not everything can be scanned
-		for (auto it = regions.begin(); it != regions.end(); ++it)
-		{
-			if (it->is_stack && it != regions.begin())
-			{
-				std::iter_swap(regions.begin(), it);
-				break;
-			}
+			this->regions[memory_region_count] = memory_region( range );
+			++memory_region_count;
 		}
 
 		if (regions.empty())
@@ -194,10 +181,12 @@ namespace harava
 
 		using namespace std::chrono_literals;
 
-		std::for_each(std::execution::par_unseq, regions.begin(), regions.end(), [&](memory_region& region)
+		std::for_each(std::execution::par_unseq, regions.begin(), regions.end(), [&](auto&& memory_region)
 		{
 			if (cancel_search)
 				return;
+
+			auto [region_id, region] = memory_region;
 
 			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
 			std::vector<u8> bytes = read_region(mem, region.start, region.end);
@@ -268,7 +257,7 @@ namespace harava
 						r.value[j] = bytes.at(i + j);
 
 					r.location = i;
-					r.region_id = region.id;
+					r.region_id = region_id;
 					r.type = type;
 
 					region_results.emplace_back(r);
@@ -414,7 +403,7 @@ namespace harava
 			return;
 		}
 
-		mem.seekg(result.location + get_region(result.region_id).start, std::ios::beg);
+		mem.seekg(result.location + regions.at(result.region_id).start, std::ios::beg);
 
 		switch (result.type)
 		{
@@ -465,16 +454,6 @@ namespace harava
 		return regions.size();
 	}
 
-	memory_region& memory::get_region(const u16 id)
-	{
-		for (memory_region& region : regions)
-			if (region.id == id)
-				return region;
-
-		std::cout << "no region could be found with the given id: " << id;
-		exit(1);
-	}
-
 	std::vector<u8> memory::read_region(std::ifstream& file, const size_t start, const size_t end)
 	{
 		std::vector<u8> bytes;
@@ -504,7 +483,7 @@ namespace harava
 				if (region_cache.contains(result.region_id)) [[likely]]
 					continue;
 
-				memory_region* region = &get_region(result.region_id);
+				memory_region* region = &regions.at(result.region_id);
 
 				region_snapshot snapshot;
 				snapshot.bytes = read_region(mem, region->start, region->end);

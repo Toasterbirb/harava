@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -14,10 +15,9 @@ namespace harava
 {
 	struct memory_region
 	{
-		memory_region(const std::string& range_str, const bool is_stack);
+		memory_region() = default;
+		memory_region(const std::string& range_str);
 		size_t start, end;
-		u16 id;
-		bool is_stack = false;
 
 		// if no results are from this region, ignore it
 		bool ignore = false;
@@ -92,7 +92,7 @@ namespace harava
 				exit(1);
 			}
 
-			mem.seekg(result.location + get_region(result.region_id).start, std::ios::beg);
+			mem.seekg(result.location + regions.at(result.region_id).start, std::ios::beg);
 
 			T value;
 			mem.read((char*)&value, sizeof(T));
@@ -129,8 +129,6 @@ namespace harava
 			return v.type;
 		}
 
-		memory_region& get_region(const u16 id);
-
 		// read a range of bytes from a file
 		std::vector<u8> read_region(std::ifstream& file, const size_t start, const size_t end);
 
@@ -146,6 +144,6 @@ namespace harava
 		const std::string proc_path;
 		const std::string mem_path;
 
-		std::vector<memory_region> regions;
+		std::map<u16, memory_region> regions;
 	};
 }
