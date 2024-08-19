@@ -249,12 +249,7 @@ namespace harava
 						return;
 
 					result r;
-
-					const u8 byte_count = datatype_to_size(type);
-
-					for (u8 j = 0; j < byte_count; ++j)
-						r.value.bytes[j] = bytes.at(i + j);
-
+					memcpy(r.value.bytes, &bytes[i], sizeof(f64));
 					r.location = i;
 					r.region_id = region_id;
 					r.type = type;
@@ -314,10 +309,8 @@ namespace harava
 				const u32 offset = result.location;
 
 				type_as_bytes<T> v;
-				for (u8 i = 0; i < sizeof(T); ++i)
-					v.bytes[i] = snapshot.bytes[i + offset];
-
-				memcpy(result.value.bytes, v.bytes, max_type_size);
+				memcpy(v.bytes, &snapshot.bytes[offset], sizeof(T));
+				memcpy(result.value.bytes, &snapshot.bytes[offset], sizeof(T));
 
 				bool comparison_result = false;
 
