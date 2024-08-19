@@ -209,7 +209,7 @@ namespace harava
 							return;
 						}
 
-						harava::scope_timer timer("scan duration: ");
+						harava::scope_timer timer(scan_duration_str);
 						results = process_memory->refine_search_change(results, true);
 						print_result_count();
 					}
@@ -227,7 +227,7 @@ namespace harava
 							return;
 						}
 
-						harava::scope_timer timer("scan duration: ");
+						harava::scope_timer timer(scan_duration_str);
 						results = process_memory->refine_search_change(results, false);
 						print_result_count();
 					}
@@ -266,7 +266,7 @@ namespace harava
 
 						for (i32 i = 0; i < count; ++i)
 						{
-							harava::scope_timer timer("scan duration: ");
+							harava::scope_timer timer(scan_duration_str);
 
 							switch (comparison)
 							{
