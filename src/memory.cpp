@@ -104,7 +104,7 @@ namespace harava
 		bool match = true;
 		for (u8 i = 0; i < type_size; ++i)
 		{
-			if (value[i] != bytes[i + location])
+			if (value.bytes[i] != bytes[i + location])
 			{
 				match = false;
 				break;
@@ -253,7 +253,7 @@ namespace harava
 					const u8 byte_count = datatype_to_size(type);
 
 					for (u8 j = 0; j < byte_count; ++j)
-						r.value[j] = bytes.at(i + j);
+						r.value.bytes[j] = bytes.at(i + j);
 
 					r.location = i;
 					r.region_id = region_id;
@@ -262,17 +262,20 @@ namespace harava
 					region_results.emplace_back(r);
 				};
 
+				type_union res_value;
+				memcpy(res_value.bytes, &bytes[i], sizeof(f64));
+
 				if (filter.enable_i32)
-					handle_result(value._int, interpret_bytes<i32>(bytes.data(), i, sizeof(i32)), datatype::INT);
+					handle_result(value._int, res_value._int, datatype::INT);
 
 				if (filter.enable_i64)
-					handle_result(value._long, interpret_bytes<i64>(bytes.data(), i, sizeof(i64)), datatype::LONG);
+					handle_result(value._long, res_value._long, datatype::LONG);
 
 				if (filter.enable_f32)
-					handle_result(value._float, interpret_bytes<f32>(bytes.data(), i, sizeof(f32)), datatype::FLOAT);
+					handle_result(value._float, res_value._float, datatype::FLOAT);
 
 				if (filter.enable_f64)
-					handle_result(value._double, interpret_bytes<f64>(bytes.data(), i, sizeof(f64)), datatype::DOUBLE);
+					handle_result(value._double, res_value._double, datatype::DOUBLE);
 
 				if (!cancel_search && results.size() * sizeof(result) > opts.memory_limit * gigabyte)
 				{
@@ -314,7 +317,7 @@ namespace harava
 				for (u8 i = 0; i < sizeof(T); ++i)
 					v.bytes[i] = snapshot.bytes[i + offset];
 
-				memcpy(result.value, v.bytes, max_type_size);
+				memcpy(result.value.bytes, v.bytes, max_type_size);
 
 				bool comparison_result = false;
 
@@ -408,7 +411,7 @@ namespace harava
 
 				type_as_bytes<i32> v;
 				v.type = value._int;
-				memcpy(result.value, v.bytes, max_type_size);
+				memcpy(result.value.bytes, v.bytes, max_type_size);
 				break;
 			}
 
@@ -418,7 +421,7 @@ namespace harava
 
 				type_as_bytes<i64> v;
 				v.type = value._int;
-				memcpy(result.value, v.bytes, max_type_size);
+				memcpy(result.value.bytes, v.bytes, max_type_size);
 				break;
 			}
 
@@ -428,7 +431,7 @@ namespace harava
 
 				type_as_bytes<f32> v;
 				v.type = value._int;
-				memcpy(result.value, v.bytes, max_type_size);
+				memcpy(result.value.bytes, v.bytes, max_type_size);
 				break;
 			}
 
@@ -438,7 +441,7 @@ namespace harava
 
 				type_as_bytes<f64> v;
 				v.type = value._int;
-				memcpy(result.value, v.bytes, max_type_size);
+				memcpy(result.value.bytes, v.bytes, max_type_size);
 				break;
 			}
 		}

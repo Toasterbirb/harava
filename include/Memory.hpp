@@ -49,9 +49,18 @@ namespace harava
 	__attribute__((hot))
 	u8 datatype_to_size();
 
+	union type_union
+	{
+		i32 _int;
+		i64 _long;
+		f32 _float;
+		f64 _double;
+		u8 bytes[8];
+	};
+
 	struct result
 	{
-		u8 value[8];
+		type_union value;
 		u32 location;
 		u16 region_id;
 		datatype type;
@@ -106,25 +115,6 @@ namespace harava
 			T type;
 			u8 bytes[max_type_size] = { 0, 0, 0, 0, 0, 0, 0, 0};
 		};
-
-		/**
-		 * @brief Interpret bytes as a type
-		 *
-		 * @param bytes bytes to interpret
-		 * @param location location in the byte array
-		 * @param size size of the type to interpret
-		 * @return value as the given datatype
-		 */
-		template<typename T>
-		T interpret_bytes(const u8* bytes, const size_t location, const u8 size)
-		{
-			type_as_bytes<T> v;
-
-			for (u8 i = 0; i < size; ++i)
-				v.bytes[i] = bytes[location + i];
-
-			return v.type;
-		}
 
 		// read a range of bytes from a file
 		std::vector<u8> read_region(std::ifstream& file, const size_t start, const size_t end);
