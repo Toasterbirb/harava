@@ -18,9 +18,6 @@ namespace harava
 		memory_region() = default;
 		memory_region(const std::string& range_str);
 		size_t start, end;
-
-		// if no results are from this region, ignore it
-		bool ignore = false;
 	};
 
 	struct type_bundle

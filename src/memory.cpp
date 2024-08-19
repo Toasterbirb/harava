@@ -285,9 +285,6 @@ namespace harava
 				}
 			}
 
-			if (region_result_count == 0)
-				region.ignore = true;
-
 			std::lock_guard<std::mutex> guard(result_mutex);
 			results.insert(results.end(), region_results.begin(), region_results.end());
 
