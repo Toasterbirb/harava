@@ -182,7 +182,7 @@ namespace harava
 			if (cancel_search)
 				return;
 
-			auto [region_id, region] = memory_region;
+			const auto& [region_id, region] = memory_region;
 
 			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
 			std::vector<u8> bytes = read_region(mem, region.start, region.end);
