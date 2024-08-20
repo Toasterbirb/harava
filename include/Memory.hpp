@@ -85,7 +85,7 @@ namespace harava
 	{
 		switch (comparison)
 		{
-			case comparison::eq:
+			case comparison::eq: [[likely]]
 				return a == b;
 
 			case comparison::lt:
