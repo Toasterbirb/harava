@@ -319,6 +319,10 @@ namespace harava
 			{
 				memcpy(result.value.bytes, &snapshot.bytes[result.location], 0x0F & static_cast<u8>(result.type));
 				new_results.emplace_back(result);
+
+				// update the end point of the region so that during the next
+				// snapshot less bytes can be read from the memory file
+				regions.at(result.region_id).end = regions.at(result.region_id).start + result.location + sizeof(f64);
 			}
 		}
 
