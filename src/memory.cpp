@@ -17,21 +17,6 @@ constexpr u64 gigabyte = 1'000'000'000;
 
 namespace harava
 {
-	const static auto comparison_func_equal = [](const auto a, const auto b) -> bool
-	{
-		return a == b;
-	};
-
-	const static auto comparison_func_less_than = [](const auto a, const auto b) -> bool
-	{
-		return a > b;
-	};
-
-	const static auto comparison_func_more_than = [](const auto a, const auto b) -> bool
-	{
-		return a < b;
-	};
-
 	static u16 memory_region_count = 0;
 
 	memory_region::memory_region(const std::string& range_str)
