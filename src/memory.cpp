@@ -69,8 +69,8 @@ namespace harava
 	u8 datatype_to_size(const datatype type)
 	{
 		return type == datatype::INT || type == datatype::FLOAT
-			? 4
-			: 8;
+			? sizeof(f32)  // 4 bytes
+			: sizeof(f64); // 8 bytes
 	}
 
 	void result::print_info() const
