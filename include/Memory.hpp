@@ -107,7 +107,7 @@ namespace harava
 	class memory
 	{
 	public:
-		memory(const i32 pid);
+		memory(const i32 pid, const options opts);
 
 		__attribute__((warn_unused_result))
 		std::vector<result> search(const options opts, const filter filter, const type_bundle value, const comparison comparison);

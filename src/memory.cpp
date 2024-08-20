@@ -107,7 +107,7 @@ namespace harava
 		return match;
 	}
 
-	memory::memory(const i32 pid)
+	memory::memory(const i32 pid, const options opts)
 	:pid(pid), proc_path("/proc/" + std::to_string(pid)), mem_path(proc_path + "/mem")
 	{
 		// Find suitable memory regions
@@ -131,6 +131,9 @@ namespace harava
 			std::stringstream ss;
 			ss << line;
 			ss >> range >> perms >> offset >> ids >> inode_id >> file_path;
+
+			if (opts.stack_scan && file_path != "[stack]")
+				continue;
 
 			// Skip memory regions that are not writable
 			if (!perms.starts_with("rw"))

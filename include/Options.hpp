@@ -11,5 +11,6 @@ namespace harava
 		bool skip_volatile = false;
 		bool skip_zeroes = false;
 		bool skip_null_regions = false;
+		bool stack_scan = false;
 	};
 }

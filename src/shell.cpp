@@ -44,7 +44,7 @@ namespace harava
 
 	void run_shell(const options opts)
 	{
-		std::unique_ptr<harava::memory> process_memory = std::make_unique<harava::memory>(opts.pid);
+		std::unique_ptr<harava::memory> process_memory = std::make_unique<harava::memory>(opts.pid, opts);
 
 		harava::filter filter;
 
@@ -470,7 +470,7 @@ namespace harava
 						first_search = true;
 
 						process_memory.reset();
-						process_memory = std::make_unique<harava::memory>(opts.pid);
+						process_memory = std::make_unique<harava::memory>(opts.pid, opts);
 					}
 				}
 			};
