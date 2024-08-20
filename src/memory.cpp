@@ -234,9 +234,6 @@ namespace harava
 					region_results.emplace_back(r);
 				}
 
-				// mask out the last 4 bits from the value
-				r.value._long = r.value._long & 0xFFFF0000;
-
 				if (filter.enable_i32 && cmp<i32>(value._int, res_value._int, comparison))
 				{
 					r.type = datatype::INT;
