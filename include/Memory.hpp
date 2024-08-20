@@ -81,7 +81,7 @@ namespace harava
 
 	template<typename T>
 	__attribute__((hot))
-	inline bool cmp(const T a, const T b, const comparison comparison)
+	inline constexpr bool cmp(const T a, const T b, const comparison comparison)
 	{
 		switch (comparison)
 		{
