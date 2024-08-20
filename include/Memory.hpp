@@ -79,6 +79,31 @@ namespace harava
 		bool compare_bytes(const std::vector<u8>& bytes) const;
 	};
 
+	template<typename T>
+	__attribute__((hot))
+	inline bool cmp(const T a, const T b, const comparison comparison)
+	{
+		switch (comparison)
+		{
+			case comparison::eq:
+				return a == b;
+
+			case comparison::lt:
+				return a > b;
+
+			case comparison::le:
+				return a >= b;
+
+			case comparison::gt:
+				return a < b;
+
+			case comparison::ge:
+				return a <= b;
+		}
+
+		return false;
+	}
+
 	class memory
 	{
 	public:

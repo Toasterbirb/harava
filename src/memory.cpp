@@ -297,62 +297,47 @@ namespace harava
 		{
 			const region_snapshot& snapshot = region_cache.at(result.region_id);
 
-			const auto check_value = [&]<typename T>(const T new_value)
-			{
-				const u32 offset = result.location;
-
-				type_as_bytes<T> v;
-				memcpy(v.bytes, &snapshot.bytes[offset], sizeof(T));
-
-				bool comparison_result = false;
-
-				switch (comparison)
-				{
-					case comparison::eq:
-						comparison_result = new_value == v.type;
-						break;
-
-					case comparison::lt:
-						comparison_result = new_value > v.type;
-						break;
-
-					case comparison::le:
-						comparison_result = new_value >= v.type;
-						break;
-
-					case comparison::gt:
-						comparison_result = new_value < v.type;
-						break;
-
-					case comparison::ge:
-						comparison_result = new_value <= v.type;
-						break;
-				}
-
-				if (comparison_result)
-				{
-					memcpy(result.value.bytes, &snapshot.bytes[offset], sizeof(T));
-					new_results.emplace_back(result);
-				}
-			};
+			bool comparison_result{false};
 
 			switch (result.type)
 			{
 				case datatype::INT:
-					check_value(new_value._int);
+				{
+					type_as_bytes<i32> v;
+					memcpy(v.bytes, &snapshot.bytes[result.location], sizeof(i32));
+					comparison_result = cmp<i32>(new_value._int, v.type, comparison);
 					break;
+				}
 
 				case datatype::LONG:
-					check_value(new_value._long);
+				{
+					type_as_bytes<i64> v;
+					memcpy(v.bytes, &snapshot.bytes[result.location], sizeof(i64));
+					comparison_result = cmp<i64>(new_value._long, v.type, comparison);
 					break;
+				}
 
 				case datatype::FLOAT:
-					check_value(new_value._float);
+				{
+					type_as_bytes<f32> v;
+					memcpy(v.bytes, &snapshot.bytes[result.location], sizeof(f32));
+					comparison_result = cmp<f32>(new_value._float, v.type, comparison);
 					break;
+				}
 
 				case datatype::DOUBLE:
-					check_value(new_value._double);
+				{
+					type_as_bytes<f64> v;
+					memcpy(v.bytes, &snapshot.bytes[result.location], sizeof(f64));
+					comparison_result = cmp<f64>(new_value._double, v.type, comparison);
 					break;
+				}
+			}
+
+			if (comparison_result)
+			{
+				memcpy(result.value.bytes, &snapshot.bytes[result.location], 0x0F & static_cast<u8>(result.type));
+				new_results.emplace_back(result);
 			}
 		}
 
