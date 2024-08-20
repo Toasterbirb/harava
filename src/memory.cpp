@@ -303,7 +303,6 @@ namespace harava
 
 				type_as_bytes<T> v;
 				memcpy(v.bytes, &snapshot.bytes[offset], sizeof(T));
-				memcpy(result.value.bytes, &snapshot.bytes[offset], sizeof(T));
 
 				bool comparison_result = false;
 
@@ -331,7 +330,10 @@ namespace harava
 				}
 
 				if (comparison_result)
+				{
+					memcpy(result.value.bytes, &snapshot.bytes[offset], sizeof(T));
 					new_results.emplace_back(result);
+				}
 			};
 
 			switch (result.type)
