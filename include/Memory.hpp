@@ -159,6 +159,7 @@ namespace harava
 		};
 
 		std::unordered_map<u16, region_snapshot> snapshot_regions(const std::vector<result>& results);
+		void trim_region_range(const result result);
 
 		const i32 pid;
 		const std::string proc_path;
