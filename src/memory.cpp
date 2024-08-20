@@ -208,62 +208,43 @@ namespace harava
 				if (opts.skip_volatile && !std::equal(bytes.begin() + i, bytes.begin() + i + sizeof(double), bytes_2.begin() + i))
 					continue;
 
-				const auto handle_result = [&](auto a, auto b, datatype type)
-				{
-					if (opts.skip_zeroes && b == 0)
-						return;
-
-					bool comparison_result = false;
-
-					switch (comparison)
-					{
-						case comparison::eq:
-							comparison_result = a == b;
-							break;
-
-						case comparison::lt:
-							comparison_result = a > b;
-							break;
-
-						case comparison::le:
-							comparison_result = a >= b;
-							break;
-
-						case comparison::gt:
-							comparison_result = a < b;
-							break;
-
-						case comparison::ge:
-							comparison_result = a <= b;
-							break;
-					}
-
-					if (!comparison_result)
-						return;
-
-					result r;
-					memcpy(r.value.bytes, &bytes[i], sizeof(f64));
-					r.location = i;
-					r.region_id = region_id;
-					r.type = type;
-
-					region_results.emplace_back(r);
-				};
-
 				type_union res_value;
 				memcpy(res_value.bytes, &bytes[i], sizeof(f64));
 
-				if (filter.enable_i32)
-					handle_result(value._int, res_value._int, datatype::INT);
+				if (opts.skip_zeroes && res_value._long == 0)
+					continue;
 
-				if (filter.enable_i64)
-					handle_result(value._long, res_value._long, datatype::LONG);
+				result r;
+				r.value._long = res_value._long; // copy 8 bytes
+				r.location = i;
+				r.region_id = region_id;
 
-				if (filter.enable_f32)
-					handle_result(value._float, res_value._float, datatype::FLOAT);
+				if (filter.enable_i64 && cmp<i64>(value._long, res_value._long, comparison))
+				{
+					r.type = datatype::LONG;
+					region_results.emplace_back(r);
+				}
 
-				if (filter.enable_f64)
-					handle_result(value._double, res_value._double, datatype::DOUBLE);
+				if (filter.enable_f64 && cmp<f64>(value._double, res_value._double, comparison))
+				{
+					r.type = datatype::DOUBLE;
+					region_results.emplace_back(r);
+				}
+
+				// mask out the last 4 bits from the value
+				r.value._int = r.value._int & 0xF0;
+
+				if (filter.enable_i32 && cmp<i32>(value._int, res_value._double, comparison))
+				{
+					r.type = datatype::INT;
+					region_results.emplace_back(r);
+				}
+
+				if (filter.enable_f32 && cmp<f32>(value._float, res_value._float, comparison))
+				{
+					r.type = datatype::FLOAT;
+					region_results.emplace_back(r);
+				}
 
 				if (!cancel_search && results.size() * sizeof(result) > opts.memory_limit * gigabyte)
 				{
