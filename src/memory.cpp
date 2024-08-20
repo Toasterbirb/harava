@@ -144,7 +144,7 @@ namespace harava
 				continue;
 
 			// Skip memory regions that are for external libraries
-			if (file_path.starts_with("/lib64")
+			if (file_path.starts_with("/lib")
 				|| file_path.starts_with("/usr/lib")
 				|| file_path.starts_with("/dev")
 				|| file_path.starts_with("/memfd")
