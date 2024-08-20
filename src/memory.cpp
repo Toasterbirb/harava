@@ -66,13 +66,6 @@ namespace harava
 		}
 	}
 
-	u8 datatype_to_size(const datatype type)
-	{
-		return type == datatype::INT || type == datatype::FLOAT
-			? sizeof(f32)  // 4 bytes
-			: sizeof(f64); // 8 bytes
-	}
-
 	void result::print_info() const
 	{
 		std::cout << std::right << std::hex << std::setw(5) << location << " | ";
@@ -99,7 +92,7 @@ namespace harava
 
 	bool result::compare_bytes(const std::vector<u8>& bytes) const
 	{
-		const u8 type_size = datatype_to_size(type);
+		const u8 type_size = static_cast<u8>(type) & 0x0F;
 
 		bool match = true;
 		for (u8 i = 0; i < type_size; ++i)

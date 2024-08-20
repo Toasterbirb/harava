@@ -29,12 +29,20 @@ namespace harava
 		const f64 _double;
 	};
 
+	// the first 4 bits of the datatype indicate the type
+	// 1. int
+	// 2. long
+	// 3. float
+	// 4. double
+	//
+	// and the latter 4 bits indicate the size
+	// (big endian)
 	enum class datatype : u8
 	{
-		INT		= 0,
-		LONG	= 1,
-		FLOAT	= 2,
-		DOUBLE	= 3
+		INT		= 0x04,
+		LONG	= 0x18,
+		FLOAT	= 0x24,
+		DOUBLE	= 0x38
 	};
 
 	enum class comparison
