@@ -11,7 +11,6 @@
 #include <regex>
 #include <sstream>
 #include <string>
-#include <thread>
 #include <unordered_map>
 
 constexpr u64 gigabyte = 1'000'000'000;
@@ -186,19 +185,11 @@ namespace harava
 
 			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
 			std::vector<u8> bytes = read_region(mem, region.start, region.end);
-			std::vector<u8> bytes_2; // this will stay empty if opts.skip_volatile is false
 
 			if (opts.skip_null_regions && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
 			{
 				std::cout << '0' << std::flush;
 				return;
-			}
-
-			if (opts.skip_volatile)
-			{
-				std::this_thread::sleep_for(0.1s);
-				bytes_2 = read_region(mem, region.start, region.end);
-				assert(bytes.size() == bytes_2.size());
 			}
 
 			// go through the bytes one by one
@@ -208,9 +199,6 @@ namespace harava
 
 			for (size_t i = 0; i < bytes.size() - sizeof(double) && !cancel_search; ++i)
 			{
-				if (opts.skip_volatile && !std::equal(bytes.begin() + i, bytes.begin() + i + sizeof(double), bytes_2.begin() + i))
-					continue;
-
 				type_union res_value;
 				memcpy(res_value.bytes, &bytes[i], sizeof(f64));
 
