@@ -401,40 +401,28 @@ namespace harava
 			case datatype::INT:
 			{
 				mem.write((char*)&value._int, sizeof(i32));
-
-				type_as_bytes<i32> v;
-				v.type = value._int;
-				memcpy(result.value.bytes, v.bytes, max_type_size);
+				result.value._int = value._int;
 				break;
 			}
 
 			case datatype::LONG:
 			{
 				mem.write((char*)&value._long, sizeof(i64));
-
-				type_as_bytes<i64> v;
-				v.type = value._int;
-				memcpy(result.value.bytes, v.bytes, max_type_size);
+				result.value._long = value._long;
 				break;
 			}
 
 			case datatype::FLOAT:
 			{
 				mem.write((char*)&value._float, sizeof(f32));
-
-				type_as_bytes<f32> v;
-				v.type = value._int;
-				memcpy(result.value.bytes, v.bytes, max_type_size);
+				result.value._float = value._float;
 				break;
 			}
 
 			case datatype::DOUBLE:
 			{
 				mem.write((char*)&value._double, sizeof(f64));
-
-				type_as_bytes<f64> v;
-				v.type = value._int;
-				memcpy(result.value.bytes, v.bytes, max_type_size);
+				result.value._double = value._double;
 				break;
 			}
 		}
