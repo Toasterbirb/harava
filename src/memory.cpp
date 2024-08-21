@@ -468,31 +468,34 @@ namespace harava
 
 		std::cout << "taking a memory snapshot\n" << std::flush;
 		{
-			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
-			if (!mem.is_open()) [[unlikely]]
-			{
-				std::cout << "can't open " << mem_path << '\n';
-				exit(1);
-			}
+			std::mutex cache_mutex;
 
 			const auto result_vecs = results.result_vecs();
 			for (const auto& [index, vec_ptr] : result_vecs)
 			{
-				assert(result_vec);
-				for (const result result : *vec_ptr)
-				{
-					if (region_cache.contains(result.region_id)) [[likely]]
-						continue;
+				std::for_each(std::execution::par_unseq, vec_ptr->begin(), vec_ptr->end(),
+					[&](result result)
+					{
+						if (region_cache.contains(result.region_id)) [[likely]]
+							return;
 
-					memory_region* region = &regions.at(result.region_id);
+						std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
+						if (!mem.is_open()) [[unlikely]]
+						{
+							std::cout << "can't open " << mem_path << '\n';
+							exit(1);
+						}
 
-					region_snapshot snapshot;
-					snapshot.bytes = read_region(mem, region->start, region->end);
-					snapshot.region = region;
+						memory_region* region = &regions.at(result.region_id);
 
-					region_cache[result.region_id] = snapshot;
-					std::cout << '.' << std::flush;
-				}
+						region_snapshot snapshot;
+						snapshot.bytes = read_region(mem, region->start, region->end);
+						snapshot.region = region;
+
+						std::lock_guard<std::mutex> lock(cache_mutex);
+						region_cache[result.region_id] = snapshot;
+						std::cout << '.' << std::flush;
+					});
 			}
 			std::cout << '\n';
 		}
