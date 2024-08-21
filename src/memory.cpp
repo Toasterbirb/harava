@@ -213,34 +213,32 @@ namespace harava
 	{
 		results aggregate_results;
 		std::mutex result_mutex;
-		// results.reserve(200'000);
 		bool cancel_search = false;
 
-		using namespace std::chrono_literals;
+		std::vector<std::future<std::pair<u16, std::vector<u8>>>> region_futures;
+		for (const auto& region : regions)
+		{
+			region_futures.emplace_back(
+				std::async(std::launch::async,
+					[&](const u16 region_id, memory_region region)
+					{
+						std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
+						if (!mem.is_open())
+						{
+							std::cout << "can't open the memory file at " << mem_path << '\n';
+							exit(1);
+						}
 
-		std::cout << "taking region snapshots\n";
-		std::unordered_map<u16, std::vector<u8>> region_data;
-		std::for_each(std::execution::par_unseq, regions.begin(), regions.end(),
-			[&](auto&& memory_region)
+						return std::pair<u16, std::vector<u8>>(region_id, read_region(mem, region.start, region.end));
+					},
+				 region.first, region.second)
+			);
+		}
+
+		std::for_each(region_futures.begin(), region_futures.end(),
+			[&](std::future<std::pair<u16, std::vector<u8>>>& region_future)
 			{
-				auto& [region_id, region] = memory_region;
-				std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
-				if (!mem.is_open())
-				{
-					std::cout << "can't open the memory file at " << mem_path << '\n';
-					exit(1);
-				}
-
-				region_data[region_id] = read_region(mem, region.start, region.end);
-				std::cout << "." << std::flush;
-			});
-
-		std::cout << "\nprocessing bytes\n";
-
-		std::for_each(region_data.begin(), region_data.end(),
-			[&](const std::pair<u16, std::vector<u8>>& region)
-			{
-				const auto& [region_id, bytes] = region;
+				const auto& [region_id, bytes] = region_future.get();
 
 				if (opts.skip_null_regions && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
 				{
