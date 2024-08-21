@@ -85,7 +85,7 @@ namespace harava
 		u64 count() const;
 		result& at(const u64 index);
 		void clear();
-		std::array<std::vector<result>*, 4> result_vecs();
+		std::array<std::pair<u8, std::vector<result>*>, 4> result_vecs();
 
 		std::vector<result> int_results;
 		std::vector<result> long_results;

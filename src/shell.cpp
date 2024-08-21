@@ -415,7 +415,7 @@ namespace harava
 					1,
 					[&command, &results, &process_memory]
 					{
-						for (auto vec : results.result_vecs())
+						for (auto& [index, vec] : results.result_vecs())
 						{
 							for (harava::result& r : *vec)
 								process_memory->set(r, command.args.at(0));

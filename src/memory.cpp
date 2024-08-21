@@ -110,12 +110,12 @@ namespace harava
 
 	result& results::at(const u64 index)
 	{
-		std::array<std::vector<result>*, 4> vecs = result_vecs();
+		auto vecs = result_vecs();
 
 		u64 total_elements{0};
 		std::vector<result>* target_vec = nullptr;
 
-		for (std::vector<result>* vec : vecs)
+		for (auto& [index, vec] : vecs)
 		{
 			if (total_elements + vec->size() > index)
 			{
@@ -138,13 +138,13 @@ namespace harava
 		double_results.clear();
 	}
 
-	std::array<std::vector<result>*, 4> results::result_vecs()
+	std::array<std::pair<u8, std::vector<result>*>, 4> results::result_vecs()
 	{
 		return {
-			&int_results,
-			&long_results,
-			&float_results,
-			&double_results
+			std::make_pair( 0, &int_results ),
+			{ 1, &long_results },
+			{ 2, &float_results },
+			{ 3, &double_results }
 		};
 	}
 
@@ -384,46 +384,19 @@ namespace harava
 		std::unordered_map<u16, region_snapshot> region_cache = snapshot_regions(old_results);
 		results new_results;
 
-		std::future<void> int_res_future = std::async(std::launch::async, [&]()
-		{
-			for (result r : old_results.int_results)
-			{
-				if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
-					new_results.int_results.emplace_back(r);
-			}
-		});
+		const auto old_res_vec_ptrs = old_results.result_vecs();
+		auto new_res_vec_ptrs = new_results.result_vecs();
 
-		std::future<void> long_res_future = std::async(std::launch::async, [&]()
-		{
-			for (result r : old_results.long_results)
+		std::for_each(std::execution::par_unseq, old_res_vec_ptrs.begin(), old_res_vec_ptrs.end(),
+			[&](const std::pair<u8, std::vector<result>*> res_vec)
 			{
-				if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
-					new_results.long_results.emplace_back(r);
-			}
-		});
-
-		std::future<void> float_res_future = std::async(std::launch::async, [&]()
-		{
-			for (result r : old_results.float_results)
-			{
-				if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
-					new_results.float_results.emplace_back(r);
-			}
-		});
-
-		std::future<void> double_res_future = std::async(std::launch::async, [&]()
-		{
-			for (result r : old_results.double_results)
-			{
-				if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
-					new_results.double_results.emplace_back(r);
-			}
-		});
-
-		int_res_future.wait();
-		long_res_future.wait();
-		float_res_future.wait();
-		double_res_future.wait();
+				const auto& [vec_index, vec] = res_vec;
+				for (result r : *vec)
+				{
+					if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
+						new_res_vec_ptrs.at(vec_index).second->emplace_back(r);
+				}
+			});
 
 		return new_results;
 	}
@@ -502,11 +475,11 @@ namespace harava
 				exit(1);
 			}
 
-			const std::array<std::vector<result>*, 4> result_vecs = results.result_vecs();
-			for (const std::vector<result>* result_vec : result_vecs)
+			const auto result_vecs = results.result_vecs();
+			for (const auto& [index, vec_ptr] : result_vecs)
 			{
 				assert(result_vec);
-				for (const result result : *result_vec)
+				for (const result result : *vec_ptr)
 				{
 					if (region_cache.contains(result.region_id)) [[likely]]
 						continue;
