@@ -353,7 +353,7 @@ namespace harava
 						// 32bit int
 						for (const result r : results.int_results)
 						{
-							print_index(counter);
+							print_index(counter++);
 							r.print_info();
 							std::cout << " | " << std::dec << process_memory->get_result_value<i32>(r) << '\n';
 						}
@@ -361,7 +361,7 @@ namespace harava
 						// 64bit int
 						for (const result r : results.long_results)
 						{
-							print_index(counter);
+							print_index(counter++);
 							r.print_info();
 							std::cout << " | " << std::dec << process_memory->get_result_value<i64>(r) << '\n';
 						}
@@ -369,7 +369,7 @@ namespace harava
 						// 32bit float
 						for (const result r : results.float_results)
 						{
-							print_index(counter);
+							print_index(counter++);
 							r.print_info();
 							std::cout << " | " << std::dec << process_memory->get_result_value<f32>(r) << '\n';
 						}
@@ -377,7 +377,7 @@ namespace harava
 						// 64bit float
 						for (const result r : results.double_results)
 						{
-							print_index(counter);
+							print_index(counter++);
 							r.print_info();
 							std::cout << " | " << std::dec << process_memory->get_result_value<f64>(r) << '\n';
 						}

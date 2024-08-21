@@ -115,9 +115,9 @@ namespace harava
 		u64 total_elements{0};
 		std::vector<result>* target_vec = nullptr;
 
-		for (auto& [index, vec] : vecs)
+		for (auto& [vec_index, vec] : vecs)
 		{
-			if (total_elements + vec->size() > index)
+			if (!vec->empty() && total_elements + vec->size() >= index)
 			{
 				target_vec = vec;
 				break;
@@ -126,8 +126,10 @@ namespace harava
 			total_elements += vec->size();
 		}
 
-		assert(target_vec);
-		return target_vec->at(index - total_elements);
+		assert(target_vec != nullptr);
+		assert(!target_vec->empty());
+		assert(index < target_vec->size());
+		return target_vec->at(index);
 	}
 
 	void results::clear()
