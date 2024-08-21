@@ -253,6 +253,9 @@ namespace harava
 				std::future<void> int_res_future = std::async(std::launch::async,
 					[&]()
 					{
+						if (!filter.enable_i32)
+							return;
+
 						for (u32 i = 0; i < bytes.size() - sizeof(i32); ++i)
 						{
 							type_union res_value;
@@ -271,6 +274,9 @@ namespace harava
 				std::future<void> long_res_future = std::async(std::launch::async,
 					[&]()
 					{
+						if (!filter.enable_i64)
+							return;
+
 						for (u32 i = 0; i < bytes.size() - sizeof(i64); ++i)
 						{
 							type_union res_value;
@@ -294,6 +300,9 @@ namespace harava
 				std::future<void> float_res_future = std::async(std::launch::async,
 					[&]()
 					{
+						if (!filter.enable_f32)
+							return;
+
 						for (u32 i = 0; i < bytes.size() - sizeof(f32); ++i)
 						{
 							type_union res_value;
@@ -317,6 +326,9 @@ namespace harava
 				std::future<void> double_res_future = std::async(std::launch::async,
 					[&]()
 					{
+						if (!filter.enable_f64)
+							return;
+
 						for (u32 i = 0; i < bytes.size() - sizeof(f64); ++i)
 						{
 							type_union res_value;
