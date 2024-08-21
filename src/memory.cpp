@@ -211,98 +211,163 @@ namespace harava
 
 	results memory::search(const options opts, const filter filter, const type_bundle value, const comparison comparison)
 	{
-		results aggragate_results;
+		results aggregate_results;
 		std::mutex result_mutex;
 		// results.reserve(200'000);
 		bool cancel_search = false;
 
 		using namespace std::chrono_literals;
 
-		std::for_each(std::execution::par_unseq, regions.begin(), regions.end(), [&](auto&& memory_region)
-		{
-			if (cancel_search)
-				return;
-
-			const auto& [region_id, region] = memory_region;
-
-			std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
-			std::vector<u8> bytes = read_region(mem, region.start, region.end);
-
-			if (opts.skip_null_regions && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
+		std::cout << "taking region snapshots\n";
+		std::unordered_map<u16, std::vector<u8>> region_data;
+		std::for_each(std::execution::par_unseq, regions.begin(), regions.end(),
+			[&](auto&& memory_region)
 			{
-				std::cout << '0' << std::flush;
-				return;
-			}
+				auto& [region_id, region] = memory_region;
+				std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
+				if (!mem.is_open())
+				{
+					std::cout << "can't open the memory file at " << mem_path << '\n';
+					exit(1);
+				}
 
-			// go through the bytes one by one
+				region_data[region_id] = read_region(mem, region.start, region.end);
+				std::cout << "." << std::flush;
+			});
 
-			results region_result;
+		std::cout << "\nprocessing bytes\n";
 
-			for (size_t i = 0; i < bytes.size() - sizeof(double) && !cancel_search; ++i)
+		std::for_each(region_data.begin(), region_data.end(),
+			[&](const std::pair<u16, std::vector<u8>>& region)
 			{
-				type_union res_value;
-				memcpy(res_value.bytes, &bytes[i], sizeof(f64));
+				const auto& [region_id, bytes] = region;
 
-				if (opts.skip_zeroes && res_value._long == 0)
-					continue;
-
-				result r;
-				r.value._long = res_value._long; // copy 8 bytes
-				r.location = i;
-				r.region_id = region_id;
-
-				if (filter.enable_i32 && cmp<i32>(value._int, res_value._int, comparison))
+				if (opts.skip_null_regions && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
 				{
-					r.type = datatype::INT;
-					region_result.int_results.emplace_back(r);
+					std::cout << '0' << std::flush;
+					return;
 				}
 
-				if (filter.enable_f32 && cmp<f32>(value._float, res_value._float, comparison))
-				{
-					r.type = datatype::FLOAT;
-					region_result.float_results.emplace_back(r);
-				}
+				results region_results;
 
-				if (filter.enable_i64 && cmp<i64>(value._long, res_value._long, comparison))
-				{
-					r.type = datatype::LONG;
-					region_result.long_results.emplace_back(r);
-				}
+				std::future<void> int_res_future = std::async(std::launch::async,
+					[&]()
+					{
+						for (u32 i = 0; i < bytes.size() - sizeof(i32); ++i)
+						{
+							type_union res_value;
+							memcpy(res_value.bytes, &bytes[i], sizeof(i32));
 
-				if (filter.enable_f64 && cmp<f64>(value._double, res_value._double, comparison))
-				{
-					r.type = datatype::DOUBLE;
-					region_result.double_results.emplace_back(r);
-				}
+							if (opts.skip_zeroes && res_value._int == 0)
+								continue;
 
-				if (!cancel_search && aggragate_results.total_size() > opts.memory_limit * gigabyte)
+							if (!cmp(value._int, res_value._int, comparison))
+								continue;
+
+							region_results.int_results.push_back({ res_value._int, i, region_id, datatype::INT });
+						}
+					});
+
+				std::future<void> long_res_future = std::async(std::launch::async,
+					[&]()
+					{
+						for (u32 i = 0; i < bytes.size() - sizeof(i64); ++i)
+						{
+							type_union res_value;
+							memcpy(res_value.bytes, &bytes[i], sizeof(i64));
+
+							if (opts.skip_zeroes && res_value._long == 0)
+								continue;
+
+							if (!cmp(value._long, res_value._long, comparison))
+								continue;
+
+							result r;
+							r.value._long = res_value._long;
+							r.location = i;
+							r.region_id = region_id;
+							r.type = datatype::LONG;
+							region_results.long_results.emplace_back(r);
+						}
+					});
+
+				std::future<void> float_res_future = std::async(std::launch::async,
+					[&]()
+					{
+						for (u32 i = 0; i < bytes.size() - sizeof(f32); ++i)
+						{
+							type_union res_value;
+							memcpy(res_value.bytes, &bytes[i], sizeof(f32));
+
+							if (opts.skip_zeroes && res_value._float == 0)
+								continue;
+
+							if (!cmp(value._float, res_value._float, comparison))
+								continue;
+
+							result r;
+							r.value._float = res_value._float;
+							r.location = i;
+							r.region_id = region_id;
+							r.type = datatype::FLOAT;
+							region_results.float_results.emplace_back(r);
+						}
+					});
+
+				std::future<void> double_res_future = std::async(std::launch::async,
+					[&]()
+					{
+						for (u32 i = 0; i < bytes.size() - sizeof(f64); ++i)
+						{
+							type_union res_value;
+							memcpy(res_value.bytes, &bytes[i], sizeof(f64));
+
+							if (opts.skip_zeroes && res_value._double == 0)
+								continue;
+
+							if (!cmp(value._double, res_value._double, comparison))
+								continue;
+
+							result r;
+							r.value._double = res_value._double;
+							r.location = i;
+							r.region_id = region_id;
+							r.type = datatype::DOUBLE;
+							region_results.double_results.emplace_back(r);
+						}
+					});
+
+				std::lock_guard<std::mutex> guard(result_mutex);
+
+				int_res_future.wait();
+				aggregate_results.int_results.insert(aggregate_results.int_results.end(),
+						region_results.int_results.begin(), region_results.int_results.end());
+
+				long_res_future.wait();
+				aggregate_results.long_results.insert(aggregate_results.long_results.end(),
+						region_results.long_results.begin(), region_results.long_results.end());
+
+				float_res_future.wait();
+				aggregate_results.float_results.insert(aggregate_results.float_results.end(),
+						region_results.float_results.begin(), region_results.float_results.end());
+
+				double_res_future.wait();
+				aggregate_results.double_results.insert(aggregate_results.double_results.end(),
+						region_results.double_results.begin(), region_results.double_results.end());
+
+				std::cout << "." << std::flush;
+
+				if (!cancel_search && aggregate_results.total_size() > opts.memory_limit * gigabyte)
 				{
 					std::scoped_lock mem_lock;
 					std::cout << "\nmemory limit of " << opts.memory_limit << "GB has been reached\n"
 						<< "stopping the search\n";
 					cancel_search = true;
 				}
-			}
-
-			std::lock_guard<std::mutex> guard(result_mutex);
-			aggragate_results.int_results.insert(aggragate_results.int_results.end(),
-					region_result.int_results.begin(), region_result.int_results.end());
-
-			aggragate_results.long_results.insert(aggragate_results.long_results.end(),
-					region_result.long_results.begin(), region_result.long_results.end());
-
-			aggragate_results.float_results.insert(aggragate_results.float_results.end(),
-					region_result.float_results.begin(), region_result.float_results.end());
-
-			aggragate_results.double_results.insert(aggragate_results.double_results.end(),
-					region_result.double_results.begin(), region_result.double_results.end());
-
-			std::cout << '.' << std::flush;
-		});
-
+			});
 		std::cout << '\n';
 
-		return aggragate_results;
+		return aggregate_results;
 	}
 
 	results memory::refine_search(const type_bundle new_value, results& old_results, const comparison comparison)
