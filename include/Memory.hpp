@@ -4,6 +4,7 @@
 #include "Options.hpp"
 #include "Types.hpp"
 
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -20,15 +21,6 @@ namespace harava
 		size_t start, end;
 	};
 
-	struct type_bundle
-	{
-		type_bundle(const std::string& value);
-		i32 _int;
-		i64 _long;
-		const f32 _float;
-		const f64 _double;
-	};
-
 	// the first 4 bits of the datatype indicate the type
 	// 1. int
 	// 2. long
@@ -43,6 +35,22 @@ namespace harava
 		LONG	= 0x18,
 		FLOAT	= 0x24,
 		DOUBLE	= 0x38
+	};
+
+	struct type_bundle
+	{
+		type_bundle(const std::string& value);
+		const std::array<char*, 4> str_ptr = {
+			reinterpret_cast<char*>(&_int),
+			reinterpret_cast<char*>(&_long),
+			reinterpret_cast<char*>(&_float),
+			reinterpret_cast<char*>(&_double)
+		};
+
+		i32 _int;
+		i64 _long;
+		f32 _float;
+		f64 _double;
 	};
 
 	enum class comparison

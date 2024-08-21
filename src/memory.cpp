@@ -495,36 +495,13 @@ namespace harava
 
 		mem.seekg(result.location + regions.at(result.region_id).start, std::ios::beg);
 
-		switch (result.type)
-		{
-			case datatype::INT:
-			{
-				mem.write((char*)&value._int, sizeof(i32));
-				result.value._int = value._int;
-				break;
-			}
+		const char* data = value.str_ptr.at((static_cast<u8>(result.type) & 0xF0) >> 4UL);
+		const u8 size = static_cast<u8>(result.type) & 0x0F;
 
-			case datatype::LONG:
-			{
-				mem.write((char*)&value._long, sizeof(i64));
-				result.value._long = value._long;
-				break;
-			}
+		mem.write(data, size);
 
-			case datatype::FLOAT:
-			{
-				mem.write((char*)&value._float, sizeof(f32));
-				result.value._float = value._float;
-				break;
-			}
-
-			case datatype::DOUBLE:
-			{
-				mem.write((char*)&value._double, sizeof(f64));
-				result.value._double = value._double;
-				break;
-			}
-		}
+		// update the result value
+		memcpy(result.value.bytes, data, size);
 	}
 
 	u64 memory::region_count() const
