@@ -79,6 +79,20 @@ namespace harava
 		bool compare_bytes(const std::vector<u8>& bytes) const;
 	};
 
+	struct results
+	{
+		u64 total_size() const;
+		u64 count() const;
+		result& at(const u64 index);
+		void clear();
+		std::array<std::vector<result>*, 4> result_vecs();
+
+		std::vector<result> int_results;
+		std::vector<result> long_results;
+		std::vector<result> float_results;
+		std::vector<result> double_results;
+	};
+
 	template<typename T>
 	__attribute__((hot))
 	inline constexpr bool cmp(const T a, const T b, const comparison comparison) noexcept
@@ -110,13 +124,13 @@ namespace harava
 		memory(const i32 pid, const options opts);
 
 		__attribute__((warn_unused_result))
-		std::vector<result> search(const options opts, const filter filter, const type_bundle value, const comparison comparison);
+		results search(const options opts, const filter filter, const type_bundle value, const comparison comparison);
 
 		__attribute__((warn_unused_result))
-		std::vector<result> refine_search(const type_bundle new_value, const std::vector<result>& old_results, const comparison comparison);
+		results refine_search(const type_bundle new_value, results& old_results, const comparison comparison);
 
 		__attribute__((warn_unused_result))
-		std::vector<result> refine_search_change(const std::vector<result>& old_results, const bool expected_result);
+		results refine_search_change(results& old_results, const bool expected_result);
 
 		void set(result& result, const type_bundle value);
 		u64 region_count() const;
@@ -158,7 +172,7 @@ namespace harava
 			std::vector<u8> bytes;
 		};
 
-		std::unordered_map<u16, region_snapshot> snapshot_regions(const std::vector<result>& results);
+		std::unordered_map<u16, region_snapshot> snapshot_regions(results& results);
 		void trim_region_range(const result result);
 
 		const i32 pid;

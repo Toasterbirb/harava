@@ -5,6 +5,7 @@
 #include <cstring>
 #include <execution>
 #include <fstream>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <ostream>
@@ -91,6 +92,62 @@ namespace harava
 		return match;
 	}
 
+	u64 results::total_size() const
+	{
+		return int_results.size() * sizeof(i32)
+			+ long_results.size() * sizeof(i64)
+			+ float_results.size() * sizeof(f32)
+			+ double_results.size() * sizeof(f64);
+	}
+
+	u64 results::count() const
+	{
+		return int_results.size()
+			+ long_results.size()
+			+ float_results.size()
+			+ double_results.size();
+	}
+
+	result& results::at(const u64 index)
+	{
+		std::array<std::vector<result>*, 4> vecs = result_vecs();
+
+		u64 total_elements{0};
+		std::vector<result>* target_vec = nullptr;
+
+		for (std::vector<result>* vec : vecs)
+		{
+			if (total_elements + vec->size() > index)
+			{
+				target_vec = vec;
+				break;
+			}
+
+			total_elements += vec->size();
+		}
+
+		assert(target_vec);
+		return target_vec->at(index - total_elements);
+	}
+
+	void results::clear()
+	{
+		int_results.clear();
+		long_results.clear();
+		float_results.clear();
+		double_results.clear();
+	}
+
+	std::array<std::vector<result>*, 4> results::result_vecs()
+	{
+		return {
+			&int_results,
+			&long_results,
+			&float_results,
+			&double_results
+		};
+	}
+
 	memory::memory(const i32 pid, const options opts)
 	:pid(pid), proc_path("/proc/" + std::to_string(pid)), mem_path(proc_path + "/mem")
 	{
@@ -152,11 +209,11 @@ namespace harava
 		std::cout << "found " << regions.size() << " suitable regions\n";
 	}
 
-	std::vector<result> memory::search(const options opts, const filter filter, const type_bundle value, const comparison comparison)
+	results memory::search(const options opts, const filter filter, const type_bundle value, const comparison comparison)
 	{
-		std::vector<result> results;
+		results aggragate_results;
 		std::mutex result_mutex;
-		results.reserve(200'000);
+		// results.reserve(200'000);
 		bool cancel_search = false;
 
 		using namespace std::chrono_literals;
@@ -179,8 +236,7 @@ namespace harava
 
 			// go through the bytes one by one
 
-			std::vector<result> region_results;
-			region_results.reserve(10'000);
+			results region_result;
 
 			for (size_t i = 0; i < bytes.size() - sizeof(double) && !cancel_search; ++i)
 			{
@@ -195,31 +251,31 @@ namespace harava
 				r.location = i;
 				r.region_id = region_id;
 
-				if (filter.enable_i64 && cmp<i64>(value._long, res_value._long, comparison))
-				{
-					r.type = datatype::LONG;
-					region_results.emplace_back(r);
-				}
-
-				if (filter.enable_f64 && cmp<f64>(value._double, res_value._double, comparison))
-				{
-					r.type = datatype::DOUBLE;
-					region_results.emplace_back(r);
-				}
-
 				if (filter.enable_i32 && cmp<i32>(value._int, res_value._int, comparison))
 				{
 					r.type = datatype::INT;
-					region_results.emplace_back(r);
+					region_result.int_results.emplace_back(r);
 				}
 
 				if (filter.enable_f32 && cmp<f32>(value._float, res_value._float, comparison))
 				{
 					r.type = datatype::FLOAT;
-					region_results.emplace_back(r);
+					region_result.float_results.emplace_back(r);
 				}
 
-				if (!cancel_search && results.size() * sizeof(result) > opts.memory_limit * gigabyte)
+				if (filter.enable_i64 && cmp<i64>(value._long, res_value._long, comparison))
+				{
+					r.type = datatype::LONG;
+					region_result.long_results.emplace_back(r);
+				}
+
+				if (filter.enable_f64 && cmp<f64>(value._double, res_value._double, comparison))
+				{
+					r.type = datatype::DOUBLE;
+					region_result.double_results.emplace_back(r);
+				}
+
+				if (!cancel_search && aggragate_results.total_size() > opts.memory_limit * gigabyte)
 				{
 					std::scoped_lock mem_lock;
 					std::cout << "\nmemory limit of " << opts.memory_limit << "GB has been reached\n"
@@ -229,94 +285,145 @@ namespace harava
 			}
 
 			std::lock_guard<std::mutex> guard(result_mutex);
-			results.insert(results.end(), region_results.begin(), region_results.end());
+			aggragate_results.int_results.insert(aggragate_results.int_results.end(),
+					region_result.int_results.begin(), region_result.int_results.end());
+
+			aggragate_results.long_results.insert(aggragate_results.long_results.end(),
+					region_result.long_results.begin(), region_result.long_results.end());
+
+			aggragate_results.float_results.insert(aggragate_results.float_results.end(),
+					region_result.float_results.begin(), region_result.float_results.end());
+
+			aggragate_results.double_results.insert(aggragate_results.double_results.end(),
+					region_result.double_results.begin(), region_result.double_results.end());
 
 			std::cout << '.' << std::flush;
 		});
 
 		std::cout << '\n';
 
-		return results;
+		return aggragate_results;
 	}
 
-	std::vector<result> memory::refine_search(const type_bundle new_value, const std::vector<result>& old_results, const comparison comparison)
+	results memory::refine_search(const type_bundle new_value, results& old_results, const comparison comparison)
 	{
-		std::vector<result> new_results;
-		new_results.reserve(old_results.size() / 4);
-
+		results new_results;
 		std::unordered_map<u16, region_snapshot> region_cache = snapshot_regions(old_results);
 
 		std::cout << "processing bytes" << std::endl;
-		for (result result : old_results)
+
+		std::future<void> int_res_future = std::async(std::launch::async, [&]()
 		{
-			const region_snapshot& snapshot = region_cache.at(result.region_id);
-
-			bool comparison_result{false};
-
-			switch (result.type)
+			for (result result : old_results.int_results)
 			{
-				case datatype::INT:
+				type_as_bytes<i32> v;
+				memcpy(v.bytes, &region_cache.at(result.region_id).bytes[result.location], sizeof(i32));
+				if (cmp<i32>(new_value._int, v.type, comparison))
 				{
-					type_as_bytes<i32> v;
-					memcpy(v.bytes, &snapshot.bytes[result.location], sizeof(i32));
-					comparison_result = cmp<i32>(new_value._int, v.type, comparison);
-					break;
-				}
-
-				case datatype::LONG:
-				{
-					type_as_bytes<i64> v;
-					memcpy(v.bytes, &snapshot.bytes[result.location], sizeof(i64));
-					comparison_result = cmp<i64>(new_value._long, v.type, comparison);
-					break;
-				}
-
-				case datatype::FLOAT:
-				{
-					type_as_bytes<f32> v;
-					memcpy(v.bytes, &snapshot.bytes[result.location], sizeof(f32));
-					comparison_result = cmp<f32>(new_value._float, v.type, comparison);
-					break;
-				}
-
-				case datatype::DOUBLE:
-				{
-					type_as_bytes<f64> v;
-					memcpy(v.bytes, &snapshot.bytes[result.location], sizeof(f64));
-					comparison_result = cmp<f64>(new_value._double, v.type, comparison);
-					break;
+					memcpy(result.value.bytes, &region_cache.at(result.region_id).bytes[result.location], 0x0F & static_cast<u8>(result.type));
+					new_results.int_results.emplace_back(result);
 				}
 			}
+		});
 
-			if (comparison_result)
+		std::future<void> long_res_future = std::async(std::launch::async, [&]()
+		{
+			for (result result : old_results.long_results)
 			{
-				memcpy(result.value.bytes, &snapshot.bytes[result.location], 0x0F & static_cast<u8>(result.type));
-				new_results.emplace_back(result);
-				trim_region_range(result);
+				type_as_bytes<i64> v;
+				memcpy(v.bytes, &region_cache.at(result.region_id).bytes[result.location], sizeof(i64));
+				if (cmp<i64>(new_value._long, v.type, comparison))
+				{
+					memcpy(result.value.bytes, &region_cache.at(result.region_id).bytes[result.location], 0x0F & static_cast<u8>(result.type));
+					new_results.long_results.emplace_back(result);
+				}
 			}
-		}
+		});
+
+		std::future<void> float_res_future = std::async(std::launch::async, [&]()
+		{
+			for (result result : old_results.float_results)
+			{
+				type_as_bytes<f32> v;
+				memcpy(v.bytes, &region_cache.at(result.region_id).bytes[result.location], sizeof(f32));
+				if (cmp<f32>(new_value._float, v.type, comparison))
+				{
+					memcpy(result.value.bytes, &region_cache.at(result.region_id).bytes[result.location], 0x0F & static_cast<u8>(result.type));
+					new_results.float_results.emplace_back(result);
+				}
+			}
+		});
+
+		std::future<void> double_res_future = std::async(std::launch::async, [&]()
+		{
+			for (result result : old_results.double_results)
+			{
+				type_as_bytes<f64> v;
+				memcpy(v.bytes, &region_cache.at(result.region_id).bytes[result.location], sizeof(f64));
+				if (cmp<f64>(new_value._double, v.type, comparison))
+				{
+					memcpy(result.value.bytes, &region_cache.at(result.region_id).bytes[result.location], 0x0F & static_cast<u8>(result.type));
+					new_results.double_results.emplace_back(result);
+				}
+			}
+		});
+
+		int_res_future.wait();
+		long_res_future.wait();
+		float_res_future.wait();
+		double_res_future.wait();
 
 		return new_results;
 	}
 
-	std::vector<result> memory::refine_search_change(const std::vector<result>& old_results, const bool expected_result)
+	results memory::refine_search_change(results& old_results, const bool expected_result)
 	{
 		// expected_result == true (value unchanged)
 		// expected_result == false (value changed)
 
 		std::unordered_map<u16, region_snapshot> region_cache = snapshot_regions(old_results);
-		std::vector<result> new_results;
-		new_results.reserve(old_results.size());
+		results new_results;
 
-		for (result result : old_results)
+		std::future<void> int_res_future = std::async(std::launch::async, [&]()
 		{
-			const region_snapshot& snapshot = region_cache.at(result.region_id);
-			if (result.compare_bytes(snapshot.bytes) == expected_result)
+			for (result r : old_results.int_results)
 			{
-				new_results.push_back(result);
-				trim_region_range(result);
+				if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
+					new_results.int_results.emplace_back(r);
 			}
-		}
+		});
+
+		std::future<void> long_res_future = std::async(std::launch::async, [&]()
+		{
+			for (result r : old_results.long_results)
+			{
+				if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
+					new_results.long_results.emplace_back(r);
+			}
+		});
+
+		std::future<void> float_res_future = std::async(std::launch::async, [&]()
+		{
+			for (result r : old_results.float_results)
+			{
+				if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
+					new_results.float_results.emplace_back(r);
+			}
+		});
+
+		std::future<void> double_res_future = std::async(std::launch::async, [&]()
+		{
+			for (result r : old_results.double_results)
+			{
+				if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
+					new_results.double_results.emplace_back(r);
+			}
+		});
+
+		int_res_future.wait();
+		long_res_future.wait();
+		float_res_future.wait();
+		double_res_future.wait();
 
 		return new_results;
 	}
@@ -382,7 +489,7 @@ namespace harava
 		return bytes;
 	}
 
-	std::unordered_map<u16, memory::region_snapshot> memory::snapshot_regions(const std::vector<result>& results)
+	std::unordered_map<u16, memory::region_snapshot> memory::snapshot_regions(results& results)
 	{
 		std::unordered_map<u16, region_snapshot> region_cache;
 
@@ -395,19 +502,24 @@ namespace harava
 				exit(1);
 			}
 
-			for (result result : results)
+			const std::array<std::vector<result>*, 4> result_vecs = results.result_vecs();
+			for (const std::vector<result>* result_vec : result_vecs)
 			{
-				if (region_cache.contains(result.region_id)) [[likely]]
-					continue;
+				assert(result_vec);
+				for (const result result : *result_vec)
+				{
+					if (region_cache.contains(result.region_id)) [[likely]]
+						continue;
 
-				memory_region* region = &regions.at(result.region_id);
+					memory_region* region = &regions.at(result.region_id);
 
-				region_snapshot snapshot;
-				snapshot.bytes = read_region(mem, region->start, region->end);
-				snapshot.region = region;
+					region_snapshot snapshot;
+					snapshot.bytes = read_region(mem, region->start, region->end);
+					snapshot.region = region;
 
-				region_cache[result.region_id] = snapshot;
-				std::cout << '.' << std::flush;
+					region_cache[result.region_id] = snapshot;
+					std::cout << '.' << std::flush;
+				}
 			}
 			std::cout << '\n';
 		}

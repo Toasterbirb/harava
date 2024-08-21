@@ -56,13 +56,13 @@ namespace harava
 			{ "f64", &filter.enable_f64 }
 		};
 
-		std::vector<harava::result> results;
+		results results;
 		bool first_search = true;
 		bool running = true;
 
 		const std::string scan_duration_str = "scan duration: ";
 		const std::string do_initial_search_notif_str = "do an initial scan first";
-		const auto print_result_count = [&results]() { std::cout << "results: " << results.size() << '\n'; };
+		const auto print_result_count = [&results]() { std::cout << "results: " << results.count() << '\n'; };
 
 		std::cout << "type 'help' for a list of commands\n";
 
@@ -261,7 +261,7 @@ namespace harava
 						if (count < 1)
 							count = 1;
 
-						size_t previous_result_count{results.size()};
+						size_t previous_result_count{results.count()};
 						u8 same_result_streak{0};
 
 						for (i32 i = 0; i < count; ++i)
@@ -283,13 +283,13 @@ namespace harava
 									return;
 							}
 
-							if (results.size() == previous_result_count)
+							if (results.count() == previous_result_count)
 								++same_result_streak;
 							else
 								same_result_streak = 0;
 
 							print_result_count();
-							previous_result_count = results.size();
+							previous_result_count = results.count();
 
 							if (same_result_streak >= 3)
 							{
@@ -315,10 +315,10 @@ namespace harava
 						char comparison = command.args.at(0).at(0);
 						size_t previous_result_count{0};
 
-						while (previous_result_count != results.size())
+						while (previous_result_count != results.count())
 						{
 							harava::scope_timer timer(scan_duration_str);
-							previous_result_count = results.size();
+							previous_result_count = results.count();
 
 							switch (comparison)
 							{
@@ -346,33 +346,40 @@ namespace harava
 					0,
 					[&results, &process_memory]
 					{
-						for (size_t i = 0; i < results.size(); ++i)
+						u64 counter{0};
+
+						const auto print_index = [](const u64 index) { std::cout << std::dec << "[" << index << "] "; };
+
+						// 32bit int
+						for (const result r : results.int_results)
 						{
-							std::cout << std::dec << "[" << i << "] ";
-							results.at(i).print_info();
+							print_index(counter);
+							r.print_info();
+							std::cout << " | " << std::dec << process_memory->get_result_value<i32>(r) << '\n';
+						}
 
-							std::cout << " | " << std::dec;
+						// 64bit int
+						for (const result r : results.long_results)
+						{
+							print_index(counter);
+							r.print_info();
+							std::cout << " | " << std::dec << process_memory->get_result_value<i64>(r) << '\n';
+						}
 
-							switch (results[i].type)
-							{
-								case harava::datatype::INT:
-									std::cout << process_memory->get_result_value<i32>(results[i]);
-									break;
+						// 32bit float
+						for (const result r : results.float_results)
+						{
+							print_index(counter);
+							r.print_info();
+							std::cout << " | " << std::dec << process_memory->get_result_value<f32>(r) << '\n';
+						}
 
-								case harava::datatype::LONG:
-									std::cout << process_memory->get_result_value<i64>(results[i]);
-									break;
-
-								case harava::datatype::FLOAT:
-									std::cout << process_memory->get_result_value<f32>(results[i]);
-									break;
-
-								case harava::datatype::DOUBLE:
-									std::cout << process_memory->get_result_value<f64>(results[i]);
-									break;
-							}
-
-							std::cout << '\n';
+						// 64bit float
+						for (const result r : results.double_results)
+						{
+							print_index(counter);
+							r.print_info();
+							std::cout << " | " << std::dec << process_memory->get_result_value<f64>(r) << '\n';
 						}
 					}
 				},
@@ -408,8 +415,11 @@ namespace harava
 					1,
 					[&command, &results, &process_memory]
 					{
-						for (harava::result& r : results)
-							process_memory->set(r, command.args.at(0));
+						for (auto vec : results.result_vecs())
+						{
+							for (harava::result& r : *vec)
+								process_memory->set(r, command.args.at(0));
+						}
 					}
 				},
 				{
