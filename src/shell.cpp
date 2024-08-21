@@ -20,6 +20,9 @@ namespace harava
 	{
 		command(const std::string& cmd_line)
 		{
+			if (cmd_line.empty())
+				return;
+
 			const std::vector<std::string> tokens = tokenize_string(cmd_line, ' ');
 			cmd = *tokens.begin();
 			args.insert(args.begin(), tokens.begin() + 1, tokens.end());
