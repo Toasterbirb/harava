@@ -59,6 +59,10 @@ namespace harava
 		i64 _long;
 		f32 _float;
 		f64 _double;
+
+		// the type bundle is invalid if any of the string to type
+		// conversions fail due to bad user input
+		bool valid{true};
 	};
 
 	enum class comparison

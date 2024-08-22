@@ -119,6 +119,8 @@ namespace harava
 					{
 						harava::scope_timer timer(scan_duration_str);
 						harava::type_bundle value(command.args.at(0));
+						if (!value.valid)
+							return;
 
 						results = first_search
 							? process_memory->search(opts, filter, value, harava::comparison::eq)
@@ -137,6 +139,8 @@ namespace harava
 					{
 						harava::scope_timer timer(scan_duration_str);
 						harava::type_bundle value(command.args.at(0));
+						if (!value.valid)
+							return;
 
 						results = first_search
 							? process_memory->search(opts, filter, value, harava::comparison::gt)
@@ -155,6 +159,8 @@ namespace harava
 					{
 						harava::scope_timer timer(scan_duration_str);
 						harava::type_bundle value(command.args.at(0));
+						if (!value.valid)
+							return;
 
 						results = first_search
 							? process_memory->search(opts, filter, value, harava::comparison::lt)
@@ -173,6 +179,8 @@ namespace harava
 					{
 						harava::scope_timer timer(scan_duration_str);
 						harava::type_bundle value(command.args.at(0));
+						if (!value.valid)
+							return;
 
 						results = first_search
 							? process_memory->search(opts, filter, value, harava::comparison::ge)
@@ -191,6 +199,8 @@ namespace harava
 					{
 						harava::scope_timer timer(scan_duration_str);
 						harava::type_bundle value(command.args.at(0));
+						if (!value.valid)
+							return;
 
 						results = first_search
 							? process_memory->search(opts, filter, value, harava::comparison::le)
@@ -413,6 +423,9 @@ namespace harava
 						const std::string& new_value = command.args.at(1);
 
 						harava::type_bundle value(new_value);
+						if (!value.valid)
+							return;
+
 						std::optional<result*> result = results.at(index);
 
 						if (result.has_value())

@@ -29,24 +29,23 @@ namespace harava
 	}
 
 	type_bundle::type_bundle(const std::string& value)
-	:_float(std::stof(value)), _double(std::stold(value))
 	{
 		try
 		{
 			_int = std::stoi(value);
-		}
-		catch (const std::exception& e)
-		{
-			_int = 2'147'483'646;
-		}
-
-		try
-		{
 			_long = std::stol(value);
+			_float = std::stof(value);
+			_double = std::stold(value);
+			valid = true;
 		}
 		catch (const std::exception& e)
 		{
-			_long = 9223372036854775806;
+			_int = 0;
+			_long = 0;
+			_float = 0;
+			_double = 0;
+			valid = false;
+			std::cout << "bad number: " << value << '\n';
 		}
 	}
 
