@@ -84,7 +84,7 @@ namespace harava
 
 	std::optional<result*> results::at(const u64 index)
 	{
-		if (index >= count())
+		if (index >= count()) [[unlikely]]
 		{
 			std::cout << "out-of-bounds index\n";
 			return {};
@@ -137,7 +137,7 @@ namespace harava
 		const std::string maps_path = proc_path + "/maps";
 		std::ifstream maps(maps_path);
 
-		if (!maps.is_open())
+		if (!maps.is_open()) [[unlikely]]
 		{
 			std::cout << "can't open " << maps_path << '\n';
 			exit(1);
@@ -182,7 +182,7 @@ namespace harava
 			++memory_region_count;
 		}
 
-		if (regions.empty())
+		if (regions.empty()) [[unlikely]]
 		{
 			std::cout << "no suitable memory regions could be found\n";
 			exit(1);
@@ -205,7 +205,7 @@ namespace harava
 					[&](const u16 region_id, memory_region region)
 					{
 						std::ifstream mem(mem_path, std::ios::in | std::ios::binary);
-						if (!mem.is_open())
+						if (!mem.is_open()) [[unlikely]]
 						{
 							std::cout << "can't open the memory file at " << mem_path << '\n';
 							exit(1);
@@ -222,7 +222,7 @@ namespace harava
 			{
 				const auto& [region_id, bytes] = region_future.get();
 
-				if (opts.skip_null_regions && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; }))
+				if (opts.skip_null_regions && std::all_of(std::execution::par_unseq, bytes.begin(), bytes.end(), [](const u8 byte) { return byte == 0; })) [[unlikely]]
 				{
 					std::cout << '0' << std::flush;
 					return;
@@ -349,7 +349,7 @@ namespace harava
 
 				std::cout << "." << std::flush;
 
-				if (!cancel_search && aggregate_results.total_size() > opts.memory_limit * gigabyte)
+				if (!cancel_search && aggregate_results.total_size() > opts.memory_limit * gigabyte) [[unlikely]]
 				{
 					std::scoped_lock mem_lock;
 					std::cout << "\nmemory limit of " << opts.memory_limit << "GB has been reached\n"
@@ -516,7 +516,7 @@ namespace harava
 		{
 			for (result result : *vec_ptr)
 			{
-				if (region_cache.contains(result.region_id))
+				if (region_cache.contains(result.region_id)) [[likely]]
 					continue;
 
 				region_snapshot snapshot;
