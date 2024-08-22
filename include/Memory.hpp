@@ -74,9 +74,6 @@ namespace harava
 		ge  // greater than or equal to
 	};
 
-	__attribute__((hot))
-	u8 datatype_to_size();
-
 	union type_union
 	{
 		i32 _int;
