@@ -51,12 +51,6 @@ namespace harava
 		}
 	}
 
-	void result::print_info() const
-	{
-		const u8 type_index = (static_cast<u8>(type) & 0xF0) >> 4UL;
-		std::cout << std::right << std::hex << std::setw(5) << location << " | " << datatype_names[type_index];
-	}
-
 	bool result::compare_bytes(const std::vector<u8>& bytes) const
 	{
 		const u8 type_size = static_cast<u8>(type) & 0x0F;

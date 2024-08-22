@@ -88,8 +88,6 @@ namespace harava
 		u16 region_id;
 		datatype type;
 
-		void print_info() const;
-
 		__attribute__((hot))
 		bool compare_bytes(const std::vector<u8>& bytes) const;
 	};
