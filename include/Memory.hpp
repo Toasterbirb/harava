@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -96,7 +97,7 @@ namespace harava
 	{
 		u64 total_size() const;
 		u64 count() const;
-		result& at(const u64 index);
+		std::optional<result*> at(const u64 index);
 		void clear();
 		std::array<std::pair<u8, std::vector<result>*>, 4> result_vecs() noexcept;
 

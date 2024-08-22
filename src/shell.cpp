@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <map>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -412,7 +413,10 @@ namespace harava
 						const std::string& new_value = command.args.at(1);
 
 						harava::type_bundle value(new_value);
-						process_memory->set(results.at(index), value);
+						std::optional<result*> result = results.at(index);
+
+						if (result.has_value())
+							process_memory->set(*result.value(), value);
 					}
 				},
 				{

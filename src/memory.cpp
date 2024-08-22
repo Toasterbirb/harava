@@ -83,8 +83,14 @@ namespace harava
 			+ double_results.size();
 	}
 
-	result& results::at(const u64 index)
+	std::optional<result*> results::at(const u64 index)
 	{
+		if (index >= count())
+		{
+			std::cout << "out-of-bounds index\n";
+			return {};
+		}
+
 		auto vecs = result_vecs();
 
 		u64 total_elements{0};
@@ -104,7 +110,7 @@ namespace harava
 		assert(target_vec != nullptr);
 		assert(!target_vec->empty());
 		assert(index < target_vec->size());
-		return target_vec->at(index);
+		return &target_vec->at(index);
 	}
 
 	void results::clear()
