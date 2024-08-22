@@ -80,6 +80,10 @@ namespace harava
 			std::cin.getline(buffer, max_command_size, '\n');
 			command command(buffer);
 
+			// if the command is empty, don't even attempt to execute it
+			if (command.cmd.empty())
+				continue;
+
 			// command format: <comand name, argument description, command description, argument count, function to run>
 			const static std::vector<std::tuple<std::string, std::string, std::string, i8, std::function<void()>>> commands = {
 				{
