@@ -53,26 +53,8 @@ namespace harava
 
 	void result::print_info() const
 	{
-		std::cout << std::right << std::hex << std::setw(5) << location << " | ";
-
-		switch(type)
-		{
-			case datatype::INT:
-				std::cout << "i32";
-				break;
-
-			case datatype::LONG:
-				std::cout << "i64";
-				break;
-
-			case datatype::FLOAT:
-				std::cout << "f32";
-				break;
-
-			case datatype::DOUBLE:
-				std::cout << "f64";
-				break;
-		}
+		const u8 type_index = (static_cast<u8>(type) & 0xF0) >> 4UL;
+		std::cout << std::right << std::hex << std::setw(5) << location << " | " << datatype_names[type_index];
 	}
 
 	bool result::compare_bytes(const std::vector<u8>& bytes) const

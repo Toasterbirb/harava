@@ -37,6 +37,13 @@ namespace harava
 		DOUBLE	= 0x38
 	};
 
+	constexpr std::array<const std::string, 4> datatype_names = {
+		"i32",
+		"i64",
+		"f32",
+		"f64"
+	};
+
 	struct type_bundle
 	{
 		type_bundle(const std::string& value);

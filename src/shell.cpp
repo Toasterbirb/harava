@@ -351,38 +351,42 @@ namespace harava
 					{
 						u64 counter{0};
 
-						const auto print_index = [](const u64 index) { std::cout << std::dec << "[" << index << "] "; };
-
-						// 32bit int
-						for (const result r : results.int_results)
+						const auto print_value = [&process_memory](const harava::result result)
 						{
-							print_index(counter++);
-							r.print_info();
-							std::cout << " | " << std::dec << process_memory->get_result_value<i32>(r) << '\n';
-						}
+							switch (result.type)
+							{
+								case datatype::INT:
+									std::cout << std::dec << process_memory->get_result_value<i32>(result);
+									break;
 
-						// 64bit int
-						for (const result r : results.long_results)
-						{
-							print_index(counter++);
-							r.print_info();
-							std::cout << " | " << std::dec << process_memory->get_result_value<i64>(r) << '\n';
-						}
+								case datatype::LONG:
+									std::cout << std::dec << process_memory->get_result_value<i64>(result);
+									break;
 
-						// 32bit float
-						for (const result r : results.float_results)
-						{
-							print_index(counter++);
-							r.print_info();
-							std::cout << " | " << std::dec << process_memory->get_result_value<f32>(r) << '\n';
-						}
+								case datatype::FLOAT:
+									std::cout << std::dec << process_memory->get_result_value<f32>(result);
+									break;
 
-						// 64bit float
-						for (const result r : results.double_results)
+								case datatype::DOUBLE:
+									std::cout << std::dec << process_memory->get_result_value<f64>(result);
+									break;
+							}
+						};
+
+						const auto result_vecs = results.result_vecs();
+
+						for (const auto& [index, vec] : result_vecs)
 						{
-							print_index(counter++);
-							r.print_info();
-							std::cout << " | " << std::dec << process_memory->get_result_value<f64>(r) << '\n';
+							for (const result r : *vec)
+							{
+								const u8 type_index = (static_cast<u8>(r.type) & 0xF0) >> 4UL;
+								std::cout << std::dec << "[" << counter++ << "] "
+									<< std::right << std::hex << std::setw(5) << r.location << " | "
+									<< datatype_names[type_index] << " | ";
+
+								print_value(r);
+								std::cout << '\n';
+							}
 						}
 					}
 				},
