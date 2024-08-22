@@ -50,7 +50,7 @@ namespace harava
 		}
 	}
 
-	bool result::compare_bytes(const std::vector<u8>& bytes) const
+	bool result::compare_bytes(const std::vector<u8>& bytes) const noexcept
 	{
 		const u8 type_size = static_cast<u8>(type) & 0x0F;
 
@@ -115,7 +115,7 @@ namespace harava
 		double_results.clear();
 	}
 
-	std::array<std::pair<u8, std::vector<result>*>, 4> results::result_vecs()
+	std::array<std::pair<u8, std::vector<result>*>, 4> results::result_vecs() noexcept
 	{
 		return {
 			std::make_pair( 0, &int_results ),

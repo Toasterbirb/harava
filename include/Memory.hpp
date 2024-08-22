@@ -89,7 +89,7 @@ namespace harava
 		datatype type;
 
 		__attribute__((hot))
-		bool compare_bytes(const std::vector<u8>& bytes) const;
+		bool compare_bytes(const std::vector<u8>& bytes) const noexcept;
 	};
 
 	struct results
@@ -98,7 +98,7 @@ namespace harava
 		u64 count() const;
 		result& at(const u64 index);
 		void clear();
-		std::array<std::pair<u8, std::vector<result>*>, 4> result_vecs();
+		std::array<std::pair<u8, std::vector<result>*>, 4> result_vecs() noexcept;
 
 		std::vector<result> int_results;
 		std::vector<result> long_results;
@@ -149,7 +149,7 @@ namespace harava
 		u64 region_count() const;
 
 		template<typename T>
-		T get_result_value(const result result)
+		T get_result_value(const result result) noexcept
 		{
 			std::fstream mem(mem_path, std::ios::in | std::ios::binary);
 			if (!mem.is_open())
