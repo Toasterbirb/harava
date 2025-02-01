@@ -71,7 +71,8 @@ namespace harava
 		lt, // less than
 		gt, // greater than
 		le, // less than or equal to
-		ge  // greater than or equal to
+		ge, // greater than or equal to
+		all // don't care, everything is fine
 	};
 
 	union type_union
@@ -152,6 +153,9 @@ namespace harava
 
 			case comparison::ge:
 				return a <= b;
+
+			case comparison::all:
+				return true;
 		}
 
 		return false;

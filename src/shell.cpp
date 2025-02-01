@@ -115,6 +115,28 @@ namespace harava
 					[&] { running = false; }
 				},
 				{
+					"unknown",
+					"",
+					"match all values",
+					0,
+					[&]
+					{
+						if (!first_search)
+						{
+							std::cout << "this can only be used for the initial search\n";
+							return;
+						}
+
+						harava::scope_timer timer(scan_duration_str);
+
+						type_bundle value("1");
+						results = process_memory->search(opts, filter, value, harava::comparison::all);
+
+						first_search = false;
+						print_result_count();
+					}
+				},
+				{
 					"=",
 					"[value]",
 					"find matching values",
