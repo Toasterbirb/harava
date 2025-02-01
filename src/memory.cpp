@@ -66,6 +66,39 @@ namespace harava
 		return match;
 	}
 
+	type_union result::compare_bytes_change(const std::vector<u8>& bytes) const noexcept
+	{
+		const u8 type_size = static_cast<u8>(type) & 0x0F;
+		type_union result;
+
+		// copy the bytes over
+		for (u8 i = 0; i < type_size; ++i)
+			result.bytes[i] = bytes[i + location];
+
+		// figure out the difference between the two values with subtraction
+		// the calling function is responsible for interpreting the results
+		switch (type)
+		{
+			case datatype::INT:
+				result._int -= value._int;
+				break;
+
+			case datatype::LONG:
+				result._long -= value._long;
+				break;
+
+			case datatype::FLOAT:
+				result._float -= value._float;
+				break;
+
+			case datatype::DOUBLE:
+				result._double -= value._double;
+				break;
+		}
+
+		return result;
+	}
+
 	u64 results::total_size() const
 	{
 		return int_results.size() * sizeof(i32)
@@ -433,7 +466,7 @@ namespace harava
 		return new_results;
 	}
 
-	results memory::refine_search_change(results& old_results, const bool expected_result)
+	results memory::refine_search_change(results& old_results, const change_info expected_result)
 	{
 		// expected_result == true (value unchanged)
 		// expected_result == false (value changed)
@@ -446,18 +479,126 @@ namespace harava
 
 		std::cout << "processing bytes\n";
 
-		std::for_each(std::execution::par_unseq, old_res_vec_ptrs.begin(), old_res_vec_ptrs.end(),
-			[&](const std::pair<u8, std::vector<result>*> res_vec)
-			{
-				const auto& [vec_index, vec] = res_vec;
-				for (result r : *vec)
+		if (expected_result.type == change_type::equal || expected_result.type == change_type::not_equal)
+		{
+			std::for_each(std::execution::par_unseq, old_res_vec_ptrs.begin(), old_res_vec_ptrs.end(),
+				[&](const std::pair<u8, std::vector<result>*> res_vec)
 				{
-					assert(region_cache.contains(r.region_id));
-					assert(region_cache.at(r.region_id).bytes.size() >= 8);
-					if (r.compare_bytes(region_cache.at(r.region_id).bytes) == expected_result)
-						new_res_vec_ptrs.at(vec_index).second->emplace_back(r);
+					const auto& [vec_index, vec] = res_vec;
+					for (result r : *vec)
+					{
+						assert(region_cache.contains(r.region_id));
+						assert(region_cache.at(r.region_id).bytes.size() >= 8);
+						if (r.compare_bytes(region_cache.at(r.region_id).bytes) == static_cast<u8>(expected_result.type))
+							new_res_vec_ptrs.at(vec_index).second->emplace_back(r);
+					}
+				});
+		}
+
+		const auto process_bytes_inc_dec = [&old_res_vec_ptrs, &region_cache, &new_res_vec_ptrs, &expected_result](auto&& comparison_func)
+		{
+			std::for_each(std::execution::par_unseq, old_res_vec_ptrs.begin(), old_res_vec_ptrs.end(),
+				[&](const std::pair<u8, std::vector<result>*> res_vec)
+				{
+					const auto& [vec_index, vec] = res_vec;
+					for (result r : *vec)
+					{
+						assert(region_cache.contains(r.region_id));
+						assert(region_cache.at(r.region_id).bytes.size() >= 8);
+						type_union comparison_result = r.compare_bytes_change(region_cache.at(r.region_id).bytes);
+
+						if (comparison_func(comparison_result, r.type, expected_result))
+							new_res_vec_ptrs.at(vec_index).second->emplace_back(r);
+					}
+				});
+		};
+
+		if (expected_result.type == change_type::increased)
+		{
+			const auto cmp = [](const type_union result, const datatype type, const change_info info) -> bool
+			{
+				switch (type)
+				{
+					case datatype::INT:
+						return result._int > 0;
+						break;
+
+					case datatype::LONG:
+						return result._long > 0;
+						break;
+
+					case datatype::FLOAT:
+						return result._float > 0;
+						break;
+
+					case datatype::DOUBLE:
+						return result._double > 0;
+						break;
 				}
-			});
+
+				return false;
+			};
+
+			process_bytes_inc_dec(cmp);
+		}
+
+		if (expected_result.type == change_type::decreased)
+		{
+			const auto cmp = [](const type_union result, const datatype type, const change_info info) -> bool
+			{
+				switch (type)
+				{
+					case datatype::INT:
+						return result._int < 0;
+						break;
+
+					case datatype::LONG:
+						return result._long < 0;
+						break;
+
+					case datatype::FLOAT:
+						return result._float < 0;
+						break;
+
+					case datatype::DOUBLE:
+						return result._double < 0;
+						break;
+				}
+
+				return false;
+			};
+
+			process_bytes_inc_dec(cmp);
+		}
+
+		if (expected_result.type == change_type::changed_by_amount)
+		{
+			const auto cmp = [](const type_union result, const datatype type, const change_info info) -> bool
+			{
+				switch (type)
+				{
+					case datatype::INT:
+						return result._int == info.amount._int;
+						break;
+
+					case datatype::LONG:
+						return result._long == info.amount._long;
+						break;
+
+					case datatype::FLOAT:
+						return result._float == info.amount._float;
+						break;
+
+					case datatype::DOUBLE:
+						return result._double == info.amount._double;
+						break;
+				}
+
+				return false;
+			};
+
+			process_bytes_inc_dec(cmp);
+		}
 
 		return new_results;
 	}

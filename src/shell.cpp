@@ -228,7 +228,7 @@ namespace harava
 						}
 
 						harava::scope_timer timer(scan_duration_str);
-						results = process_memory->refine_search_change(results, true);
+						results = process_memory->refine_search_change(results, change_info(change_type::equal));
 						print_result_count();
 					}
 				},
@@ -246,7 +246,61 @@ namespace harava
 						}
 
 						harava::scope_timer timer(scan_duration_str);
-						results = process_memory->refine_search_change(results, false);
+						results = process_memory->refine_search_change(results, change_info(change_type::not_equal));
+						print_result_count();
+					}
+				},
+				{
+					"!",
+					"[value]",
+					"find values that have changed by X amount since last scan",
+					1,
+					[&]
+					{
+						if (first_search)
+						{
+							std::cout << do_initial_search_notif_str << '\n';
+							return;
+						}
+
+						harava::scope_timer timer(scan_duration_str);
+						results = process_memory->refine_search_change(results, change_info(change_type::changed_by_amount, command.args.at(0)));
+						print_result_count();
+					}
+				},
+				{
+					">",
+					"",
+					"find values that have increased since last scan",
+					0,
+					[&]
+					{
+						if (first_search)
+						{
+							std::cout << do_initial_search_notif_str << '\n';
+							return;
+						}
+
+						harava::scope_timer timer(scan_duration_str);
+						results = process_memory->refine_search_change(results, change_info(change_type::increased));
+						print_result_count();
+					}
+				},
+				{
+					"<",
+					"",
+					"find values that have decreased since last scan",
+					0,
+					[&]
+					{
+						if (first_search)
+						{
+							std::cout << do_initial_search_notif_str << '\n';
+							return;
+						}
+
+						harava::scope_timer timer(scan_duration_str);
+						results = process_memory->refine_search_change(results, change_info(change_type::decreased));
 						print_result_count();
 					}
 				},
@@ -289,11 +343,11 @@ namespace harava
 							switch (comparison)
 							{
 								case '!':
-									results = process_memory->refine_search_change(results, false);
+									results = process_memory->refine_search_change(results, change_info(change_type::not_equal));
 									break;
 
 								case '=':
-									results = process_memory->refine_search_change(results, true);
+									results = process_memory->refine_search_change(results, change_info(change_type::equal));
 									break;
 
 								default:
@@ -341,11 +395,11 @@ namespace harava
 							switch (comparison)
 							{
 								case '!':
-									results = process_memory->refine_search_change(results, false);
+									results = process_memory->refine_search_change(results, change_info(change_type::not_equal));
 									break;
 
 								case '=':
-									results = process_memory->refine_search_change(results, true);
+									results = process_memory->refine_search_change(results, change_info(change_type::equal));
 									break;
 
 								default:

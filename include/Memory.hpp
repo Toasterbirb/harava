@@ -83,6 +83,27 @@ namespace harava
 		u8 bytes[8];
 	};
 
+	enum class change_type : u8
+	{
+		// equality types are given a numerical value
+		// so that they can be used directly with boolean
+		// comparisons
+		not_equal = 0,
+		equal = 1,
+		increased,
+		decreased,
+		changed_by_amount,
+	};
+
+	struct change_info
+	{
+		change_info(const change_type t, const std::string change = "0")
+		:type(t), amount(change) {}
+
+		change_type type;
+		type_bundle amount;
+	};
+
 	struct result
 	{
 		type_union value;
@@ -92,6 +113,9 @@ namespace harava
 
 		__attribute__((hot))
 		bool compare_bytes(const std::vector<u8>& bytes) const noexcept;
+
+		__attribute__((hot))
+		type_union compare_bytes_change(const std::vector<u8>& bytes) const noexcept;
 	};
 
 	struct results
@@ -145,7 +169,7 @@ namespace harava
 		results refine_search(const type_bundle new_value, results& old_results, const comparison comparison);
 
 		__attribute__((warn_unused_result))
-		results refine_search_change(results& old_results, const bool expected_result);
+		results refine_search_change(results& old_results, const change_info expected_result);
 
 		void set(result& result, const type_bundle value);
 		u64 region_count() const;
